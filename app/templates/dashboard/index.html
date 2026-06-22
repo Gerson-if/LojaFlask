@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block page_name %}Dashboard{% endblock %}
+{% block content %}
+
+<div class="page-heading">
+  <div>
+    <div class="page-title">Olá, {{ current_user.name.split()[0] }}! 👋</div>
+    <div class="page-subtitle">Visão geral da sua operação hoje</div>
+  </div>
+  {% if store %}
+  <a class="btn-outline-lf" href="{{ url_for('storefront.store', slug=store.slug) }}" target="_blank">
+    <i class="bi bi-eye"></i> Ver loja
+  </a>
+  {% endif %}
+</div>
+
+<div class="grid grid-4" style="margin-bottom:1.25rem">
+  <div class="stat-card">
+    <div class="stat-label">Produtos</div>
+    <div class="stat-value">{{ stats.products }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Pedidos</div>
+    <div class="stat-value">{{ stats.orders }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Clientes</div>
+    <div class="stat-value">{{ stats.customers }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Receita entregue</div>
+    <div class="stat-value" style="font-size:1.5rem">R$ {{ "%.2f"|format(stats.revenue) }}</div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+
+  <section class="card-lf">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <h3 style="margin:0;font-size:1rem;font-weight:800">Pedidos recentes</h3>
+      <a class="btn-outline-lf btn-sm-lf" href="{{ url_for('dashboard.orders') }}">Ver todos</a>
+    </div>
+    {% if orders %}
+    <div class="table-scroll">
+      <table class="table-lf">
+        <thead>
+          <tr>
+            <th>Pedido</th>
+            <th>Cliente</th>
+            <th>Total</th>
+            <th>Status</th>
+            <th style="width:60px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for order in orders %}
+          <tr>
+            <td style="font-weight:700;white-space:nowrap">#{{ order.code }}</td>
+            <td>{{ order.customer_name }}</td>
+            <td style="white-space:nowrap;font-weight:700">R$ {{ "%.2f"|format(order.total) }}</td>
+            <td>{% include "dashboard/_status.html" %}</td>
+            <td>
+              <a class="btn-outline-lf btn-sm-lf" href="{{ url_for('dashboard.order_detail', order_id=order.id) }}">
+                <i class="bi bi-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-receipt" style="font-size:2rem;display:block;margin-bottom:.5rem;color:#cbd5e1"></i>
+      Nenhum pedido recebido ainda.
+    </div>
+    {% endif %}
+  </section>
+
+  <section class="card-lf">
+    <h3 style="margin:0 0 .75rem;font-size:1rem;font-weight:800">Link da sua loja</h3>
+    {% if store %}
+    <p style="color:#64748b;font-size:.875rem;margin:0 0 1rem">
+      Compartilhe este link com seus clientes para eles acessarem seu catálogo público.
+    </p>
+    <a class="btn-outline-lf store-link" href="{{ url_for('storefront.store', slug=store.slug) }}" target="_blank" style="word-break:break-all;text-align:left;justify-content:flex-start;gap:.5rem">
+      <i class="bi bi-link-45deg" style="flex-shrink:0"></i>
+      {{ url_for('storefront.store', slug=store.slug, _external=True) }}
+    </a>
+    <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
+      <a class="btn-primary-lf btn-sm-lf" href="{{ url_for('dashboard.products') }}">
+        <i class="bi bi-box-seam"></i> Gerenciar produtos
+      </a>
+      <a class="btn-outline-lf btn-sm-lf" href="{{ url_for('dashboard.store_settings') }}">
+        <i class="bi bi-palette"></i> Personalizar loja
+      </a>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-shop" style="font-size:2rem;display:block;margin-bottom:.5rem;color:#cbd5e1"></i>
+      Complete o cadastro da loja para gerar o link público.
+    </div>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}

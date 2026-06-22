@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Carrinho - {{ store.name }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <style>:root{--primary:{{ store.primary_color }};--accent:{{ store.secondary_color }}}</style>
+</head>
+<body class="storefront-body">
+  <header class="store-header">
+    <div class="store-shell store-header-inner">
+      <a class="store-brand" href="{{ url_for('storefront.store', slug=store.slug) }}">
+        {% if store.logo_url %}<img src="{{ store.logo_url }}" alt="{{ store.name }}">{% else %}<span><i class="bi bi-shop"></i></span>{% endif %}
+        <strong>{{ store.name }}</strong>
+      </a>
+      <a class="cart-button" href="{{ url_for('storefront.cart', slug=store.slug) }}" aria-label="Carrinho">
+        <i class="bi bi-cart3"></i>
+        <span data-cart-count>{{ cart_count }}</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="store-shell cart-page">
+    <div class="page-heading">
+      <div>
+        <div class="page-title">Carrinho</div>
+        <div class="page-subtitle">{{ store.name }}</div>
+      </div>
+      <a class="btn-outline-lf" href="{{ url_for('storefront.store', slug=store.slug) }}"><i class="bi bi-arrow-left"></i> Continuar comprando</a>
+    </div>
+
+    {% if items %}
+    <form class="cart-panel" method="post">
+      <div class="cart-items">
+        {% for product, qty in items %}
+        {% set images = product.images|sort(attribute='position') %}
+        <article class="cart-item">
+          <a class="cart-item-media" href="{{ url_for('storefront.product_detail', slug=store.slug, product_id=product.id) }}">
+            {% if images %}
+              <img src="{{ images[0].image_url }}" alt="{{ product.name }}">
+            {% else %}
+              <i class="bi bi-image"></i>
+            {% endif %}
+          </a>
+          <div class="cart-item-info">
+            <a href="{{ url_for('storefront.product_detail', slug=store.slug, product_id=product.id) }}">{{ product.name }}</a>
+            <span>R$ {{ "%.2f"|format(product.final_price) }} / un.</span>
+          </div>
+          <div class="quantity-control cart-quantity">
+            <button type="button" data-qty-step="-1" aria-label="Diminuir quantidade"><i class="bi bi-dash"></i></button>
+            <input data-qty-input type="number" min="0" max="{{ product.stock }}" name="qty_{{ product.id }}" value="{{ qty }}">
+            <button type="button" data-qty-step="1" aria-label="Aumentar quantidade"><i class="bi bi-plus"></i></button>
+          </div>
+          <strong class="cart-subtotal">R$ {{ "%.2f"|format(product.final_price * qty) }}</strong>
+        </article>
+        {% endfor %}
+      </div>
+
+      <aside class="cart-summary">
+        <div>Total do pedido</div>
+        <strong>R$ {{ "%.2f"|format(total) }}</strong>
+        <div class="actions">
+          <button class="btn-outline-lf" type="submit"><i class="bi bi-arrow-repeat"></i> Atualizar carrinho</button>
+          <a class="btn-primary-lf" href="{{ url_for('storefront.checkout', slug=store.slug) }}"><i class="bi bi-bag-check"></i> Finalizar pedido</a>
+        </div>
+      </aside>
+    </form>
+    {% else %}
+    <div class="card-lf empty-state">
+      <i class="bi bi-cart-x" style="font-size: 2.5rem; display: block; margin-bottom: .75rem; color: #cbd5e1;"></i>
+      Seu carrinho está vazio.
+      <br><br>
+      <a class="btn-primary-lf" href="{{ url_for('storefront.store', slug=store.slug) }}">Ver produtos</a>
+    </div>
+    {% endif %}
+  </main>
+
+  <script src="{{ url_for('static', filename='js/storefront.js') }}"></script>
+</body>
+</html>

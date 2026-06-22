@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block page_name %}{{ "Editar produto" if product else "Novo produto" }}{% endblock %}
+{% block content %}
+
+<div class="page-heading">
+  <div>
+    <div class="page-title">{{ "Editar produto" if product else "Novo produto" }}</div>
+    <div class="page-subtitle">Cadastre as informações e anexe imagens do produto.</div>
+  </div>
+  <a class="btn-outline-lf" href="{{ url_for('dashboard.products') }}">
+    <i class="bi bi-arrow-left"></i> Voltar
+  </a>
+</div>
+
+<form class="card-lf form-panel stack-lg" method="post" enctype="multipart/form-data">
+
+  <div class="grid grid-2">
+    <div>
+      <label class="form-label-lf">Nome do produto</label>
+      <input class="input-lf" name="name" placeholder="Ex: Camiseta Preta M" value="{{ product.name if product else '' }}" required>
+    </div>
+    <div>
+      <label class="form-label-lf">Categoria</label>
+      <select class="input-lf" name="category_id">
+        <option value="">Sem categoria</option>
+        {% for category in categories %}
+        <option value="{{ category.id }}" {% if product and product.category_id==category.id %}selected{% endif %}>{{ category.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="form-label-lf">Preço</label>
+      <input class="input-lf" name="price" type="number" min="0" step="0.01" placeholder="0,00" value="{{ product.price if product else '' }}" required>
+    </div>
+    <div>
+      <label class="form-label-lf">Preço promocional</label>
+      <input class="input-lf" name="sale_price" type="number" min="0" step="0.01" placeholder="Deixe vazio se não houver" value="{{ product.sale_price if product and product.sale_price else '' }}">
+      <span class="help-text">Quando preenchido, o preço normal aparece riscado.</span>
+    </div>
+    <div>
+      <label class="form-label-lf">Estoque</label>
+      <input class="input-lf" name="stock" type="number" min="0" placeholder="0" value="{{ product.stock if product else 0 }}">
+    </div>
+    <div>
+      <label class="form-label-lf">Status</label>
+      <select class="input-lf" name="status">
+        {% for status in ["ativo","destaque","inativo"] %}
+        <option {% if product and product.status==status %}selected{% endif %}>{{ status }}</option>
+        {% endfor %}
+      </select>
+      <span class="help-text">Produtos com status "inativo" não aparecem na loja.</span>
+    </div>
+  </div>
+
+  <div>
+    <label class="form-label-lf">Descrição</label>
+    <textarea class="input-lf" name="description" rows="4" placeholder="Descreva o produto, materiais, tamanhos disponíveis...">{{ product.description if product else '' }}</textarea>
+  </div>
+
+  <div>
+    <label class="form-label-lf">Imagens do produto</label>
+    <label class="file-upload">
+      <input name="image_files" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+      <span class="file-upload-icon"><i class="bi bi-cloud-arrow-up"></i></span>
+      <span class="file-upload-title">Clique ou arraste as imagens aqui</span>
+      <span class="file-upload-hint">JPG, PNG, WEBP ou GIF — você pode selecionar várias imagens.<br>Ao editar, novos anexos substituem as imagens atuais.</span>
+    </label>
+  </div>
+
+  {% if product and product.images %}
+  <div>
+    <div class="form-label-lf">Imagens atuais</div>
+    <div class="thumb-grid">
+      {% for image in product.images|sort(attribute='position') %}
+      <img src="{{ image.image_url }}" alt="Imagem {{ loop.index }} de {{ product.name }}" class="thumb-preview">
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="actions form-actions">
+    <a class="btn-outline-lf" href="{{ url_for('dashboard.products') }}">Cancelar</a>
+    <button class="btn-primary-lf"><i class="bi bi-check2"></i> Salvar produto</button>
+  </div>
+
+</form>
+{% endblock %}

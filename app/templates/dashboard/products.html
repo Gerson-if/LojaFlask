@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block page_name %}Produtos{% endblock %}
+{% block content %}
+
+<div class="page-heading">
+  <div>
+    <div class="page-title">Produtos</div>
+    <div class="page-subtitle">Gerencie o catálogo da sua loja</div>
+  </div>
+  <a class="btn-primary-lf" href="{{ url_for('dashboard.product_new') }}">
+    <i class="bi bi-plus-lg"></i> Novo produto
+  </a>
+</div>
+
+<form class="card-lf actions" method="get" style="margin-bottom:1rem;flex-wrap:wrap">
+  <input class="input-lf" style="flex:1;min-width:180px;max-width:320px" name="q" value="{{ request.args.get('q','') }}" placeholder="Buscar produto...">
+  <select class="input-lf" style="min-width:180px;max-width:240px" name="category_id">
+    <option value="">Todas as categorias</option>
+    {% for category in categories %}
+    <option value="{{ category.id }}" {% if request.args.get('category_id', type=int)==category.id %}selected{% endif %}>{{ category.name }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn-outline-lf"><i class="bi bi-funnel"></i> Filtrar</button>
+</form>
+
+{% if products %}
+<div class="grid grid-3">
+  {% for product in products %}
+  <article class="product-card">
+    {% if product.images %}
+      <img class="product-img" src="{{ product.images[0].image_url }}" alt="{{ product.name }}">
+    {% else %}
+      <div class="product-img-placeholder"><i class="bi bi-image"></i></div>
+    {% endif %}
+    <div class="product-body">
+      <div class="product-category">{{ product.category.name if product.category else "Sem categoria" }}</div>
+      <div style="font-weight:800;font-size:.95rem;line-height:1.3;color:var(--ink)">{{ product.name }}</div>
+      {% if product.description %}
+      <p class="product-summary">{{ product.description }}</p>
+      {% endif %}
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:auto">
+        <strong class="product-price">R$ {{ "%.2f"|format(product.final_price) }}</strong>
+        <span class="badge-lf {% if product.status == 'ativo' %}badge-success{% elif product.status == 'destaque' %}badge-warning{% else %}badge-danger{% endif %}">
+          {{ product.status }}
+        </span>
+      </div>
+      <div style="font-size:.78rem;color:#94a3b8;margin-top:.15rem">
+        <i class="bi bi-box-seam"></i> {{ product.stock }} em estoque
+      </div>
+      <div class="actions" style="margin-top:.75rem;border-top:1px solid var(--line);padding-top:.75rem">
+        <a class="btn-outline-lf btn-sm-lf" href="{{ url_for('dashboard.product_edit', product_id=product.id) }}">
+          <i class="bi bi-pencil"></i> Editar
+        </a>
+        <form method="post" action="{{ url_for('dashboard.product_delete', product_id=product.id) }}" onsubmit="return confirm('Excluir {{ product.name }}?')">
+          <button class="btn-danger-lf btn-sm-lf"><i class="bi bi-trash"></i> Excluir</button>
+        </form>
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card-lf empty-state">
+  <i class="bi bi-box-seam" style="font-size:2.5rem;display:block;margin-bottom:.75rem;color:#cbd5e1"></i>
+  Nenhum produto cadastrado ainda.
+  <br><br>
+  <a class="btn-primary-lf" href="{{ url_for('dashboard.product_new') }}"><i class="bi bi-plus-lg"></i> Criar primeiro produto</a>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+instance/
+migration_empty.db
+upgrade_test.db
+app/static/uploads/*
+!app/static/uploads/.gitkeep

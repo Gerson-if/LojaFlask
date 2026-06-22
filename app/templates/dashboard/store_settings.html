@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block page_name %}Minha loja{% endblock %}
+{% block content %}
+
+<div class="page-heading">
+  <div>
+    <div class="page-title">Personalizar loja</div>
+    <div class="page-subtitle">Configure dados públicos, cores, logo e banners.</div>
+  </div>
+  <a class="btn-outline-lf" target="_blank" href="{{ url_for('storefront.store', slug=store.slug) }}">
+    <i class="bi bi-eye"></i> Ver loja
+  </a>
+</div>
+
+<form class="card-lf form-panel stack-lg" method="post" enctype="multipart/form-data">
+
+  <div>
+    <div style="font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">Informações gerais</div>
+    <div class="grid grid-2">
+      <div>
+        <label class="form-label-lf">Nome da loja</label>
+        <input class="input-lf" name="name" value="{{ store.name }}" required>
+      </div>
+      <div>
+        <label class="form-label-lf">WhatsApp</label>
+        <input class="input-lf" name="whatsapp" placeholder="(00) 00000-0000" value="{{ store.whatsapp or '' }}">
+      </div>
+      <div>
+        <label class="form-label-lf">Cidade</label>
+        <input class="input-lf" name="city" placeholder="Ex: São Paulo, SP" value="{{ store.city or '' }}">
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <label class="form-label-lf">Descrição / slogan</label>
+    <textarea class="input-lf" name="description" rows="3" placeholder="Uma breve descrição da sua loja...">{{ store.description or "" }}</textarea>
+  </div>
+
+  <div>
+    <div style="font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">Identidade visual</div>
+    <div class="grid grid-2">
+      <div>
+        <label class="form-label-lf">Cor principal</label>
+        <input class="input-lf color-input" name="primary_color" type="color" value="{{ store.primary_color }}">
+        <span class="help-text">Usada em botões, links e destaques.</span>
+      </div>
+      <div>
+        <label class="form-label-lf">Cor secundária</label>
+        <input class="input-lf color-input" name="secondary_color" type="color" value="{{ store.secondary_color }}">
+        <span class="help-text">Usada no badge do carrinho e acentos.</span>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div style="font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">Imagens</div>
+    <div class="grid grid-2">
+      <div>
+        <label class="form-label-lf">Logo da loja</label>
+        <label class="file-upload file-upload-compact">
+          <input name="logo_file" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+          <span class="file-upload-icon"><i class="bi bi-image"></i></span>
+          <span class="file-upload-title">Anexar logo</span>
+          <span class="file-upload-hint">A nova imagem substitui a logo atual.</span>
+        </label>
+      </div>
+      <div>
+        <label class="form-label-lf">Banners da loja</label>
+        <label class="file-upload file-upload-compact">
+          <input name="banner_files" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+          <span class="file-upload-icon"><i class="bi bi-images"></i></span>
+          <span class="file-upload-title">Anexar banners</span>
+          <span class="file-upload-hint">Imagens largas (16:9). Novos banners substituem os atuais.</span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  {% if store.logo_url or store.banners %}
+  <div class="preview-panel">
+    {% if store.logo_url %}
+    <div>
+      <div class="form-label-lf">Logo atual</div>
+      <img src="{{ store.logo_url }}" alt="{{ store.name }}" class="logo-preview">
+    </div>
+    {% endif %}
+    {% if store.banners %}
+    <div class="preview-wide">
+      <div class="form-label-lf">Banners atuais</div>
+      <div class="thumb-grid">
+        {% for banner in store.banners|sort(attribute='position') %}
+        <img src="{{ banner.image_url }}" alt="Banner {{ loop.index }}" class="thumb-preview wide">
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="actions form-actions">
+    <button class="btn-primary-lf"><i class="bi bi-check2"></i> Salvar configurações</button>
+  </div>
+
+</form>
+{% endblock %}

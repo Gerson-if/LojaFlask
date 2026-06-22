@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ store.name }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <style>:root{--primary:{{ store.primary_color }};--accent:{{ store.secondary_color }}}</style>
+</head>
+<body class="storefront-body">
+  <header class="store-header">
+    <div class="store-shell store-header-inner">
+      <a class="store-brand" href="{{ url_for('storefront.store', slug=store.slug) }}">
+        {% if store.logo_url %}<img src="{{ store.logo_url }}" alt="{{ store.name }}">{% else %}<span><i class="bi bi-shop"></i></span>{% endif %}
+        <strong>{{ store.name }}</strong>
+        {% if store.city %}<small>{{ store.city }}</small>{% endif %}
+      </a>
+      <a class="cart-button" href="{{ url_for('storefront.cart', slug=store.slug) }}" aria-label="Carrinho">
+        <i class="bi bi-cart3"></i>
+        <span data-cart-count>{{ cart_count }}</span>
+      </a>
+    </div>
+  </header>
+
+  {% set banners = store.banners|sort(attribute='position') %}
+  {% if banners %}
+  <section class="store-hero" data-carousel>
+    <div class="store-hero-slides">
+      {% for banner in banners %}
+      <img class="store-hero-slide {% if loop.first %}is-active{% endif %}" src="{{ banner.image_url }}" alt="Banner {{ loop.index }} de {{ store.name }}">
+      {% endfor %}
+    </div>
+    {% if banners|length > 1 %}
+    <button class="carousel-control carousel-prev" type="button" data-carousel-prev aria-label="Banner anterior"><i class="bi bi-chevron-left"></i></button>
+    <button class="carousel-control carousel-next" type="button" data-carousel-next aria-label="Próximo banner"><i class="bi bi-chevron-right"></i></button>
+    <div class="carousel-dots">
+      {% for banner in banners %}
+      <button class="{% if loop.first %}is-active{% endif %}" type="button" data-carousel-dot="{{ loop.index0 }}" aria-label="Ir para banner {{ loop.index }}"></button>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <main class="store-shell">
+    <section class="store-intro">
+      <div>
+        <h1>{{ store.name }}</h1>
+        <p>{{ store.description or "Produtos disponíveis para pedido." }}</p>
+      </div>
+    </section>
+
+    <nav class="store-categories" aria-label="Categorias">
+      <a class="{{ 'is-active' if not selected_category_id else '' }}" href="{{ url_for('storefront.store', slug=store.slug) }}">Todos</a>
+      {% for category in store.categories %}
+      <a class="{{ 'is-active' if selected_category_id==category.id else '' }}" href="{{ url_for('storefront.store', slug=store.slug, categoria=category.id) }}">{{ category.icon or "" }} {{ category.name }}</a>
+      {% endfor %}
+    </nav>
+
+    {% if products %}
+    <div class="product-grid">
+      {% for product in products %}
+      {% set images = product.images|sort(attribute='position') %}
+      <article class="product-card store-product-card">
+        <a class="product-media-link" href="{{ url_for('storefront.product_detail', slug=store.slug, product_id=product.id) }}">
+          {% if images %}
+            <img class="product-img" src="{{ images[0].image_url }}" alt="{{ product.name }}">
+          {% else %}
+            <div class="product-img-placeholder"><i class="bi bi-image"></i></div>
+          {% endif %}
+          {% if product.status == "destaque" %}<span class="feature-ribbon">Destaque</span>{% endif %}
+        </a>
+        <div class="product-body">
+          <div class="product-category">{{ product.category.name if product.category else "" }}</div>
+          <a class="product-title-link" href="{{ url_for('storefront.product_detail', slug=store.slug, product_id=product.id) }}">{{ product.name }}</a>
+          <p class="product-summary">{{ product.description or "" }}</p>
+          <div class="price-row">
+            <div>
+              {% if product.sale_price %}<div class="old-price">R$ {{ "%.2f"|format(product.price) }}</div>{% endif %}
+              <strong class="product-price">R$ {{ "%.2f"|format(product.final_price) }}</strong>
+            </div>
+          </div>
+          {% if product.stock > 0 %}
+          <form class="js-add-to-cart" method="post" action="{{ url_for('storefront.cart_add', slug=store.slug, product_id=product.id) }}">
+            <input type="hidden" name="quantity" value="1">
+            <button class="btn-primary-lf product-add-btn"><i class="bi bi-cart-plus"></i> Adicionar</button>
+          </form>
+          {% else %}
+          <div class="stock-empty">Sem estoque</div>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="card-lf empty-state">Nenhum produto disponível.</div>
+    {% endif %}
+  </main>
+
+  <div class="store-toast" data-store-toast></div>
+  <script src="{{ url_for('static', filename='js/storefront.js') }}"></script>
+</body>
+</html>

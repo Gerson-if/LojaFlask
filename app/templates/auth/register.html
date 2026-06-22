@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Criar conta - LojaFácil{% endblock %}
+{% block public_content %}
+<div class="auth-screen">
+  <form class="auth-card" method="post">
+    <div class="auth-logo"><i class="bi bi-shop"></i> LojaFácil</div>
+    <div class="auth-sub">Crie sua loja e comece a vender</div>
+    {% include "_flash.html" %}
+    <div class="grid grid-2">
+      <div><label class="form-label-lf">Nome completo</label><input class="input-lf" name="name" required></div>
+      <div><label class="form-label-lf">WhatsApp</label><input class="input-lf" name="phone"></div>
+    </div>
+    <div style="height:.75rem"></div>
+    <label class="form-label-lf">Nome da loja</label><input class="input-lf" name="store_name" required>
+    <div style="height:.75rem"></div>
+    <label class="form-label-lf">E-mail</label><input class="input-lf" name="email" type="email" required>
+    <div style="height:.75rem"></div>
+    <label class="form-label-lf">Senha</label><input class="input-lf" name="password" type="password" minlength="6" required>
+    <div style="height:1rem"></div>
+    <button class="btn-primary-lf" style="width:100%"><i class="bi bi-person-plus"></i> Criar conta e loja</button>
+    <p style="text-align:center;margin:1rem 0 0;font-size:.9rem">Já tem conta? <a href="{{ url_for('auth.login') }}">Entrar</a></p>
+  </form>
+</div>
+{% endblock %}

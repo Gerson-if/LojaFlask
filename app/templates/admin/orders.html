@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block page_name %}Pedidos da plataforma{% endblock %}
+{% block content %}
+
+<div class="page-heading">
+  <div>
+    <div class="page-title">Todos os pedidos</div>
+    <div class="page-subtitle">Pedidos recebidos em todas as lojas da plataforma</div>
+  </div>
+  <form method="get" class="actions">
+    <select class="input-lf" name="status" style="min-width:160px">
+      <option value="">Todos os status</option>
+      {% for status in ["Pendente","Confirmado","Enviado","Entregue","Cancelado"] %}
+      <option {% if request.args.get('status')==status %}selected{% endif %}>{{ status }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn-outline-lf"><i class="bi bi-funnel"></i> Filtrar</button>
+  </form>
+</div>
+
+<section class="card-lf">
+  {% if orders %}
+  <div class="table-scroll">
+    <table class="table-lf">
+      <thead>
+        <tr>
+          <th>Pedido</th>
+          <th>Loja</th>
+          <th>Cliente</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Data</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+        <tr>
+          <td style="font-weight:700;white-space:nowrap">#{{ order.code }}</td>
+          <td>
+            <div style="font-weight:600">{{ order.store.name }}</div>
+            <div style="font-size:.75rem;color:#94a3b8">{{ order.store.slug }}</div>
+          </td>
+          <td>{{ order.customer_name }}</td>
+          <td style="white-space:nowrap;font-weight:700">R$ {{ "%.2f"|format(order.total) }}</td>
+          <td>{% include "dashboard/_status.html" %}</td>
+          <td style="white-space:nowrap;color:#64748b;font-size:.875rem">{{ order.created_at.strftime("%d/%m/%Y") }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-receipt" style="font-size:2.5rem;display:block;margin-bottom:.75rem;color:#cbd5e1"></i>
+    Nenhum pedido na plataforma.
+  </div>
+  {% endif %}
+</section>
+
+{% endblock %}

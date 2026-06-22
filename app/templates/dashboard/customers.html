@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block page_name %}Clientes{% endblock %}
+{% block content %}
+
+<div class="page-heading">
+  <div>
+    <div class="page-title">Clientes</div>
+    <div class="page-subtitle">Gerencie a base de clientes da sua loja</div>
+  </div>
+</div>
+
+<div class="grid grid-2">
+
+  <form class="card-lf stack-md" method="post">
+    <h3 style="margin:0 0 .25rem;font-size:1rem;font-weight:800">Novo cliente</h3>
+    <div>
+      <label class="form-label-lf">Nome</label>
+      <input class="input-lf" name="name" placeholder="Nome completo" required>
+    </div>
+    <div>
+      <label class="form-label-lf">WhatsApp</label>
+      <input class="input-lf" name="phone" placeholder="(00) 00000-0000" required>
+    </div>
+    <div>
+      <label class="form-label-lf">E-mail</label>
+      <input class="input-lf" name="email" type="email" placeholder="email@exemplo.com">
+    </div>
+    <div>
+      <label class="form-label-lf">Endereço</label>
+      <textarea class="input-lf" name="address" rows="3" placeholder="Rua, número, bairro..."></textarea>
+    </div>
+    <div class="actions form-actions" style="margin-top:.25rem">
+      <button class="btn-primary-lf"><i class="bi bi-person-plus"></i> Salvar cliente</button>
+    </div>
+  </form>
+
+  <section class="card-lf">
+    <form method="get" class="actions" style="margin-bottom:1rem">
+      <input class="input-lf" name="q" value="{{ request.args.get('q','') }}" placeholder="Buscar por nome ou telefone...">
+      <button class="btn-outline-lf"><i class="bi bi-search"></i> Buscar</button>
+    </form>
+
+    {% if customers %}
+    <div class="table-scroll">
+      <table class="table-lf">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>Telefone</th>
+            <th style="width:80px"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for customer in customers %}
+          <tr>
+            <td>
+              <div style="font-weight:700">{{ customer.name }}</div>
+              {% if customer.email %}<div style="font-size:.78rem;color:#64748b">{{ customer.email }}</div>{% endif %}
+            </td>
+            <td>
+              <a href="https://wa.me/{{ customer.phone|replace(' ','')|replace('(','') |replace(')','') |replace('-','') }}" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;display:inline-flex;align-items:center;gap:.35rem">
+                <i class="bi bi-whatsapp" style="color:#25d366"></i> {{ customer.phone }}
+              </a>
+            </td>
+            <td>
+              <form method="post" action="{{ url_for('dashboard.customer_delete', customer_id=customer.id) }}" onsubmit="return confirm('Excluir cliente {{ customer.name }}?')">
+                <button class="btn-danger-lf btn-sm-lf"><i class="bi bi-trash"></i></button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <i class="bi bi-people" style="font-size:2rem;display:block;margin-bottom:.5rem;color:#cbd5e1"></i>
+      Nenhum cliente cadastrado.
+    </div>
+    {% endif %}
+  </section>
+
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pedido enviado - {{ store.name }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <style>:root{--primary:{{ store.primary_color }};--accent:{{ store.secondary_color }}}</style>
+</head>
+<body class="storefront-body">
+  <main class="store-shell success-page">
+    <section class="card-lf success-card">
+      <div class="success-icon"><i class="bi bi-check2"></i></div>
+      <div class="page-title">Pedido recebido!</div>
+      <p>Seu pedido <strong>#{{ order.code }}</strong> foi registrado com sucesso em <strong>{{ store.name }}</strong>.</p>
+      <h2>R$ {{ "%.2f"|format(order.total) }}</h2>
+      {% if whatsapp_url %}
+      <a class="whatsapp-btn" href="{{ whatsapp_url }}" target="_blank" rel="noopener">
+        <i class="bi bi-whatsapp"></i> Confirmar pelo WhatsApp
+      </a>
+      {% endif %}
+      <a class="btn-outline-lf" href="{{ url_for('storefront.store', slug=store.slug) }}">
+        <i class="bi bi-arrow-left"></i> Voltar para a loja
+      </a>
+    </section>
+  </main>
+</body>
+</html>

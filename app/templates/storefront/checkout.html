@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkout - {{ store.name }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <style>:root{--primary:{{ store.primary_color }};--accent:{{ store.secondary_color }}}</style>
+</head>
+<body class="storefront-body">
+  <header class="store-header">
+    <div class="store-shell store-header-inner">
+      <a class="store-brand" href="{{ url_for('storefront.store', slug=store.slug) }}">
+        {% if store.logo_url %}<img src="{{ store.logo_url }}" alt="{{ store.name }}">{% else %}<span><i class="bi bi-shop"></i></span>{% endif %}
+        <strong>{{ store.name }}</strong>
+      </a>
+      <a class="cart-button" href="{{ url_for('storefront.cart', slug=store.slug) }}" aria-label="Carrinho">
+        <i class="bi bi-cart3"></i>
+        <span data-cart-count>{{ cart_count or 0 }}</span>
+      </a>
+    </div>
+  </header>
+
+  <main class="store-shell checkout-page">
+    <div class="page-heading">
+      <div>
+        <div class="page-title">Finalizar pedido</div>
+        <div class="page-subtitle">{{ store.name }}</div>
+      </div>
+    </div>
+
+    {% if error %}<div class="flash flash-danger">{{ error }}</div>{% endif %}
+
+    <div class="checkout-layout">
+      <form class="card-lf stack-md" method="post">
+        <div>
+          <label class="form-label-lf">Nome completo</label>
+          <input class="input-lf" name="name" placeholder="Seu nome" required>
+        </div>
+        <div>
+          <label class="form-label-lf">WhatsApp</label>
+          <input class="input-lf" name="phone" placeholder="(00) 00000-0000" required>
+        </div>
+        <div>
+          <label class="form-label-lf">Endereço de entrega</label>
+          <textarea class="input-lf" name="address" rows="3" placeholder="Rua, número, bairro, cidade..."></textarea>
+        </div>
+        <div>
+          <label class="form-label-lf">Observações</label>
+          <textarea class="input-lf" name="notes" rows="3" placeholder="Alguma observação para o pedido?"></textarea>
+        </div>
+        <button class="btn-primary-lf full-btn" type="submit"><i class="bi bi-bag-check"></i> Enviar pedido</button>
+      </form>
+
+      <section class="card-lf checkout-summary">
+        <h3 style="margin: 0 0 .5rem; font-size: 1rem;">Resumo do pedido</h3>
+        {% for product, qty in items %}
+        <div class="summary-line">
+          <span>{{ product.name }} <strong style="color: var(--ink);">x{{ qty }}</strong></span>
+          <strong>R$ {{ "%.2f"|format(product.final_price * qty) }}</strong>
+        </div>
+        {% endfor %}
+        <div class="summary-total">
+          <span>Total</span>
+          <strong>R$ {{ "%.2f"|format(total) }}</strong>
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

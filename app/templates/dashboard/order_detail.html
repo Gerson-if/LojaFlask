@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block page_name %}Pedido #{{ order.code }}{% endblock %}
+{% block content %}
+
+<div class="page-heading">
+  <div>
+    <div class="page-title">Pedido #{{ order.code }}</div>
+    <div class="page-subtitle">Detalhes e atualização de status do pedido</div>
+  </div>
+  <a class="btn-outline-lf" href="{{ url_for('dashboard.orders') }}">
+    <i class="bi bi-arrow-left"></i> Voltar
+  </a>
+</div>
+
+<div class="grid grid-2">
+
+  <section class="card-lf stack-md">
+    <h3 style="margin:0;font-size:1rem;font-weight:800">Dados do cliente</h3>
+
+    <div style="display:grid;gap:.65rem">
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <i class="bi bi-person" style="color:#94a3b8;width:18px;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Cliente</div>
+          <div style="font-weight:700">{{ order.customer_name }}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <i class="bi bi-whatsapp" style="color:#25d366;width:18px;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em">WhatsApp</div>
+          <a href="https://wa.me/{{ order.customer_phone|replace(' ','')|replace('(','') |replace(')','') |replace('-','') }}" target="_blank" rel="noopener" style="font-weight:700;text-decoration:none">
+            {{ order.customer_phone }}
+          </a>
+        </div>
+      </div>
+      {% if order.customer_address %}
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <i class="bi bi-geo-alt" style="color:#94a3b8;width:18px;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Endereço</div>
+          <div>{{ order.customer_address }}</div>
+        </div>
+      </div>
+      {% endif %}
+      {% if order.notes %}
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <i class="bi bi-chat-left-text" style="color:#94a3b8;width:18px;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Observações</div>
+          <div style="color:#64748b">{{ order.notes }}</div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div style="border-top:1px solid var(--line);padding-top:1rem">
+      <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-bottom:.65rem">Status do pedido</div>
+      <form method="post" class="actions">
+        <select class="input-lf" name="status" style="flex:1;max-width:220px">
+          {% for status in ["Pendente","Confirmado","Enviado","Entregue","Cancelado"] %}
+          <option {% if order.status==status %}selected{% endif %}>{{ status }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn-primary-lf"><i class="bi bi-check2"></i> Atualizar</button>
+      </form>
+    </div>
+  </section>
+
+  <section class="card-lf">
+    <h3 style="margin:0 0 1rem;font-size:1rem;font-weight:800">Itens do pedido</h3>
+    <div class="table-scroll">
+      <table class="table-lf">
+        <thead>
+          <tr>
+            <th>Produto</th>
+            <th style="text-align:center">Qtd.</th>
+            <th style="text-align:right">Subtotal</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in order.items %}
+          <tr>
+            <td style="font-weight:600">{{ item.product_name }}</td>
+            <td style="text-align:center">{{ item.quantity }}</td>
+            <td style="text-align:right;white-space:nowrap;font-weight:700">R$ {{ "%.2f"|format(item.subtotal) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:1rem;margin-top:.5rem">
+      <span style="font-size:.875rem;color:#64748b;font-weight:700">Total do pedido</span>
+      <span style="font-size:1.6rem;font-weight:800;color:var(--primary)">R$ {{ "%.2f"|format(order.total) }}</span>
+    </div>
+  </section>
+
+</div>
+{% endblock %}
