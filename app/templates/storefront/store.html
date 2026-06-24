@@ -9,94 +9,223 @@
   <style>:root{--primary:{{ store.primary_color }};--accent:{{ store.secondary_color }}}</style>
 </head>
 <body class="storefront-body">
-  <header class="store-header">
-    <div class="store-shell store-header-inner">
-      <a class="store-brand" href="{{ url_for('storefront.store', slug=store.slug) }}">
-        {% if store.logo_url %}<img src="{{ store.logo_url }}" alt="{{ store.name }}">{% else %}<span><i class="bi bi-shop"></i></span>{% endif %}
-        <strong>{{ store.name }}</strong>
-        {% if store.city %}<small>{{ store.city }}</small>{% endif %}
-      </a>
-      <a class="cart-button" href="{{ url_for('storefront.cart', slug=store.slug) }}" aria-label="Carrinho">
-        <i class="bi bi-cart3"></i>
-        <span data-cart-count>{{ cart_count }}</span>
-      </a>
-    </div>
-  </header>
-
   {% set banners = store.banners|sort(attribute='position') %}
-  {% if banners %}
-  <section class="store-hero" data-carousel>
-    <div class="store-hero-slides">
-      {% for banner in banners %}
-      <img class="store-hero-slide {% if loop.first %}is-active{% endif %}" src="{{ banner.image_url }}" alt="Banner {{ loop.index }} de {{ store.name }}">
-      {% endfor %}
-    </div>
-    {% if banners|length > 1 %}
-    <button class="carousel-control carousel-prev" type="button" data-carousel-prev aria-label="Banner anterior"><i class="bi bi-chevron-left"></i></button>
-    <button class="carousel-control carousel-next" type="button" data-carousel-next aria-label="Próximo banner"><i class="bi bi-chevron-right"></i></button>
-    <div class="carousel-dots">
-      {% for banner in banners %}
-      <button class="{% if loop.first %}is-active{% endif %}" type="button" data-carousel-dot="{{ loop.index0 }}" aria-label="Ir para banner {{ loop.index }}"></button>
-      {% endfor %}
-    </div>
-    {% endif %}
-  </section>
-  {% endif %}
+  <div class="store-page">
+    <header class="store-header">
+      <div class="store-shell store-header-inner">
+        <div class="store-header-brand-group">
+          <button class="category-toggle store-menu-toggle" type="button" data-category-toggle aria-label="Abrir ou recolher categorias">
+            <i class="bi bi-list"></i>
+          </button>
+          <a class="store-brand" href="{{ url_for('storefront.store', slug=store.slug) }}">
+            {% if store.logo_url %}<img src="{{ store.logo_url }}" alt="{{ store.name }}">{% else %}<span><i class="bi bi-shop"></i></span>{% endif %}
+            <strong>{{ store.name }}</strong>
+            {% if store.city %}<small>{{ store.city }}</small>{% endif %}
+          </a>
+        </div>
 
-  <main class="store-shell">
-    <section class="store-intro">
-      <div>
-        <h1>{{ store.name }}</h1>
-        <p>{{ store.description or "Produtos disponíveis para pedido." }}</p>
-      </div>
-    </section>
-
-    <nav class="store-categories" aria-label="Categorias">
-      <a class="{{ 'is-active' if not selected_category_id else '' }}" href="{{ url_for('storefront.store', slug=store.slug) }}">Todos</a>
-      {% for category in store.categories %}
-      <a class="{{ 'is-active' if selected_category_id==category.id else '' }}" href="{{ url_for('storefront.store', slug=store.slug, categoria=category.id) }}">{{ category.icon or "" }} {{ category.name }}</a>
-      {% endfor %}
-    </nav>
-
-    {% if products %}
-    <div class="product-grid">
-      {% for product in products %}
-      {% set images = product.images|sort(attribute='position') %}
-      <article class="product-card store-product-card">
-        <a class="product-media-link" href="{{ url_for('storefront.product_detail', slug=store.slug, product_id=product.id) }}">
-          {% if images %}
-            <img class="product-img" src="{{ images[0].image_url }}" alt="{{ product.name }}">
-          {% else %}
-            <div class="product-img-placeholder"><i class="bi bi-image"></i></div>
+        <form class="store-search-form" method="get" action="{{ url_for('storefront.store', slug=store.slug) }}">
+          {% if selected_category_id %}
+          <input type="hidden" name="categoria" value="{{ selected_category_id }}">
           {% endif %}
-          {% if product.status == "destaque" %}<span class="feature-ribbon">Destaque</span>{% endif %}
+          {% if sort %}
+          <input type="hidden" name="sort" value="{{ sort }}">
+          {% endif %}
+          <input class="store-search-input" name="q" value="{{ search_query }}" placeholder="Buscar produtos..." aria-label="Buscar produtos">
+          <button class="store-search-submit" type="submit" aria-label="Pesquisar">
+            <i class="bi bi-search"></i>
+          </button>
+        </form>
+
+        <a class="store-cart-link" href="{{ url_for('storefront.cart', slug=store.slug) }}" aria-label="Carrinho">
+          <span class="store-cart-icon">
+            <i class="bi bi-cart3"></i>
+            <span data-cart-count>{{ cart_count }}</span>
+          </span>
+          <span class="store-cart-text">Carrinho</span>
         </a>
-        <div class="product-body">
-          <div class="product-category">{{ product.category.name if product.category else "" }}</div>
-          <a class="product-title-link" href="{{ url_for('storefront.product_detail', slug=store.slug, product_id=product.id) }}">{{ product.name }}</a>
-          <p class="product-summary">{{ product.description or "" }}</p>
-          <div class="price-row">
-            <div>
-              {% if product.sale_price %}<div class="old-price">R$ {{ "%.2f"|format(product.price) }}</div>{% endif %}
-              <strong class="product-price">R$ {{ "%.2f"|format(product.final_price) }}</strong>
-            </div>
+      </div>
+    </header>
+
+    <button class="category-backdrop" type="button" data-category-close aria-label="Fechar categorias"></button>
+
+    <aside class="store-category-drawer" data-category-drawer>
+      <div class="drawer-header">
+        <div>
+          <h3>Categorias</h3>
+          <small>Navegação rápida</small>
+        </div>
+        <button class="icon-btn" type="button" data-category-toggle aria-label="Recolher categorias">
+          <i class="bi bi-layout-sidebar-inset"></i>
+        </button>
+      </div>
+      <nav class="category-drawer-list" aria-label="Categorias">
+        <a class="{{ 'is-active' if not selected_category_id else '' }}" href="{{ url_for('storefront.store', slug=store.slug, q=search_query, sort=sort) }}">
+          <i class="bi bi-grid"></i><span class="category-link-label">Todos os produtos</span>
+        </a>
+        {% for category in categories %}
+        <a class="{{ 'is-active' if selected_category_id==category.id else '' }}" href="{{ url_for('storefront.store', slug=store.slug, categoria=category.id, q=search_query, sort=sort) }}">
+          <i class="bi bi-chevron-right"></i>
+          <span class="category-link-badge">{{ category.icon or category.name[0] }}</span>
+          <span class="category-link-label">{{ category.name }}</span>
+        </a>
+        {% endfor %}
+      </nav>
+    </aside>
+
+    <main class="store-shell store-main">
+      <section class="store-hero-panel">
+        <div class="store-hero-copy">
+          <span class="hero-badge">OFERTAS EXCLUSIVAS</span>
+          <h1>Tecnologia que<br><span>transforma</span></h1>
+          <p>{{ store.description or "Os melhores produtos com os menores preços." }}</p>
+          <div class="store-hero-actions">
+            <a class="btn-primary-lf" href="#catalogo">Comprar agora</a>
+            {% if store.whatsapp %}
+            <a class="btn-outline-lf" href="https://wa.me/{{ store.whatsapp }}" target="_blank" rel="noopener">Falar no WhatsApp</a>
+            {% endif %}
           </div>
-          {% if product.stock > 0 %}
-          <form class="js-add-to-cart" method="post" action="{{ url_for('storefront.cart_add', slug=store.slug, product_id=product.id) }}">
-            <input type="hidden" name="quantity" value="1">
-            <button class="btn-primary-lf product-add-btn"><i class="bi bi-cart-plus"></i> Adicionar</button>
-          </form>
+        </div>
+
+        <div class="store-hero-visual {% if banners|length > 1 %}is-carousel{% endif %}" data-carousel>
+          {% if banners %}
+          <div class="store-hero-slides">
+            {% for banner in banners %}
+            <img class="store-hero-slide {% if loop.first %}is-active{% endif %}" src="{{ banner.image_url }}" alt="Banner {{ loop.index }} de {{ store.name }}">
+            {% endfor %}
+          </div>
+          {% if banners|length > 1 %}
+          <button class="carousel-control carousel-prev" type="button" data-carousel-prev aria-label="Banner anterior"><i class="bi bi-chevron-left"></i></button>
+          <button class="carousel-control carousel-next" type="button" data-carousel-next aria-label="Próximo banner"><i class="bi bi-chevron-right"></i></button>
+          <div class="carousel-dots">
+            {% for banner in banners %}
+            <button class="{% if loop.first %}is-active{% endif %}" type="button" data-carousel-dot="{{ loop.index0 }}" aria-label="Ir para banner {{ loop.index }}"></button>
+            {% endfor %}
+          </div>
+          {% endif %}
+          {% elif featured_product %}
+          {% set featured_images = featured_product.images|sort(attribute='position') %}
+          {% if featured_images %}
+          <div class="store-hero-single">
+            <img src="{{ featured_images[0].image_url }}" alt="{{ featured_product.name }}">
+          </div>
           {% else %}
-          <div class="stock-empty">Sem estoque</div>
+          <div class="store-hero-placeholder">
+            <i class="bi bi-bag-heart"></i>
+            <strong>{{ store.name }}</strong>
+            <span>Seu catálogo em destaque</span>
+          </div>
+          {% endif %}
+          {% else %}
+          <div class="store-hero-placeholder">
+            <i class="bi bi-bag-heart"></i>
+            <strong>{{ store.name }}</strong>
+            <span>Seu catálogo em destaque</span>
+          </div>
           {% endif %}
         </div>
-      </article>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="card-lf empty-state">Nenhum produto disponível.</div>
-    {% endif %}
-  </main>
+      </section>
+
+      <section class="store-catalog-header" id="catalogo">
+        <div>
+          <h2>Todos os produtos</h2>
+          <p>
+            {% if pagination.total %}
+              {{ pagination.total }} produto{{ 's' if pagination.total != 1 else '' }} encontrado{{ 's' if pagination.total != 1 else '' }}
+              {% if search_query %} para "{{ search_query }}"{% endif %}
+            {% else %}
+              Nenhum produto encontrado.
+            {% endif %}
+          </p>
+        </div>
+        <form class="store-sort-form" method="get" action="{{ url_for('storefront.store', slug=store.slug) }}">
+          {% if selected_category_id %}
+          <input type="hidden" name="categoria" value="{{ selected_category_id }}">
+          {% endif %}
+          {% if search_query %}
+          <input type="hidden" name="q" value="{{ search_query }}">
+          {% endif %}
+          <label class="sr-only" for="store-sort">Ordenar produtos</label>
+          <select id="store-sort" name="sort" class="input-lf" onchange="this.form.submit()">
+            <option value="recentes" {% if sort == "recentes" %}selected{% endif %}>Mais recentes</option>
+            <option value="nome" {% if sort == "nome" %}selected{% endif %}>Nome A-Z</option>
+            <option value="menor_preco" {% if sort == "menor_preco" %}selected{% endif %}>Menor preço</option>
+            <option value="maior_preco" {% if sort == "maior_preco" %}selected{% endif %}>Maior preço</option>
+          </select>
+        </form>
+      </section>
+
+      {% if products %}
+      <div class="product-grid store-grid">
+        {% for product in products %}
+        {% set images = product.images|sort(attribute='position') %}
+        <article class="product-card store-product-card">
+          <a class="product-media-link" href="{{ url_for('storefront.product_detail', slug=store.slug, product_id=product.id, categoria=selected_category_id, q=search_query, sort=sort) }}">
+            {% if images %}
+            <img class="product-img" src="{{ images[0].image_url }}" alt="{{ product.name }}">
+            {% else %}
+            <div class="product-img-placeholder"><i class="bi bi-image"></i></div>
+            {% endif %}
+            {% if product.status == "destaque" %}<span class="feature-ribbon">Destaque</span>{% endif %}
+          </a>
+          <div class="product-body">
+            <div class="product-category">{{ product.category.name if product.category else "" }}</div>
+            <a class="product-title-link" href="{{ url_for('storefront.product_detail', slug=store.slug, product_id=product.id, categoria=selected_category_id, q=search_query, sort=sort) }}">{{ product.name }}</a>
+            <div class="price-row">
+              <div>
+                {% if product.sale_price %}<div class="old-price">R$ {{ "%.2f"|format(product.price) }}</div>{% endif %}
+                <strong class="product-price">R$ {{ "%.2f"|format(product.final_price) }}</strong>
+              </div>
+            </div>
+            {% if product.stock > 0 %}
+            <form class="js-add-to-cart" method="post" action="{{ url_for('storefront.cart_add', slug=store.slug, product_id=product.id) }}">
+              <input type="hidden" name="quantity" value="1">
+              <button class="btn-primary-lf product-add-btn" type="submit"><i class="bi bi-cart-plus"></i> Adicionar</button>
+            </form>
+            {% else %}
+            <div class="stock-empty">Sem estoque</div>
+            {% endif %}
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="card-lf empty-state">Nenhum produto disponível.</div>
+      {% endif %}
+
+      {% if pagination.pages > 1 %}
+      <nav class="store-pagination" aria-label="Paginação de produtos">
+        <span>Página {{ pagination.page }} de {{ pagination.pages }}</span>
+        {% if pagination.has_next %}
+        <a class="btn-primary-lf" href="{{ url_for('storefront.store', slug=store.slug, categoria=selected_category_id, q=search_query, sort=sort, page=pagination.next_num) }}">Ver próxima página <i class="bi bi-arrow-right"></i></a>
+        {% endif %}
+      </nav>
+      {% endif %}
+    </main>
+
+    <footer class="store-footer store-footer-offset">
+      <div class="store-shell store-footer-inner">
+        <div>
+          <strong>{{ store.name }}</strong>
+          <small>Todos os direitos reservados © 2026</small>
+        </div>
+        <div class="store-footer-meta">
+          <div class="store-socials">
+            {% if store.whatsapp %}<a href="https://wa.me/{{ store.whatsapp }}" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>{% endif %}
+            {% if store.instagram_url %}<a href="{{ store.instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram"><i class="bi bi-instagram"></i></a>{% endif %}
+            {% if store.facebook_url %}<a href="{{ store.facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook"><i class="bi bi-facebook"></i></a>{% endif %}
+            {% if store.tiktok_url %}<a href="{{ store.tiktok_url }}" target="_blank" rel="noopener" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>{% endif %}
+          </div>
+          <div class="store-payments" aria-label="Formas de pagamento">
+            <span>VISA</span>
+            <span>Mastercard</span>
+            <span>Elo</span>
+            <span>Pix</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>
 
   <div class="store-toast" data-store-toast></div>
   <script src="{{ url_for('static', filename='js/storefront.js') }}"></script>

@@ -5,12 +5,11 @@
 <div class="page-heading">
   <div>
     <div class="page-title">Categorias</div>
-    <div class="page-subtitle">Organize os produtos da sua loja por categorias</div>
+    <div class="page-subtitle">Organize os produtos e edite rapidamente nomes e ícones.</div>
   </div>
 </div>
 
-<div class="grid grid-2">
-
+<div class="grid grid-2 dashboard-grid">
   <form class="card-lf stack-md" method="post">
     <h3 style="margin:0 0 .25rem;font-size:1rem;font-weight:800">Nova categoria</h3>
     <div>
@@ -19,7 +18,7 @@
     </div>
     <div>
       <label class="form-label-lf">Ícone ou marcador</label>
-      <input class="input-lf" name="icon" placeholder="Ex: ⭐ promo #">
+      <input class="input-lf" name="icon" placeholder="Ex: promo, novo, #">
       <span class="help-text">Aparece ao lado do nome no menu da loja.</span>
     </div>
     <div class="actions form-actions" style="margin-top:.25rem">
@@ -27,32 +26,20 @@
     </div>
   </form>
 
-  <section class="card-lf">
+  <section class="card-lf table-card">
     <h3 style="margin:0 0 1rem;font-size:1rem;font-weight:800">Categorias cadastradas</h3>
     {% if categories %}
-    <div class="table-scroll">
-      <table class="table-lf">
-        <thead>
-          <tr>
-            <th>Nome</th>
-            <th>Ícone</th>
-            <th style="width:80px"></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for category in categories %}
-          <tr>
-            <td style="font-weight:700">{{ category.name }}</td>
-            <td>{{ category.icon or "—" }}</td>
-            <td>
-              <form method="post" action="{{ url_for('dashboard.category_delete', category_id=category.id) }}" onsubmit="return confirm('Excluir categoria {{ category.name }}?')">
-                <button class="btn-danger-lf btn-sm-lf"><i class="bi bi-trash"></i> Excluir</button>
-              </form>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="category-edit-list">
+      {% for category in categories %}
+      <form class="category-edit-row" method="post">
+        <input type="hidden" name="id" value="{{ category.id }}">
+        <input class="input-lf" name="name" value="{{ category.name }}" required>
+        <input class="input-lf" name="icon" value="{{ category.icon or '' }}" placeholder="Ícone">
+        <button class="btn-outline-lf btn-sm-lf"><i class="bi bi-check2"></i> Salvar</button>
+        <button form="delete-category-{{ category.id }}" class="btn-danger-lf btn-sm-lf" type="submit"><i class="bi bi-trash"></i></button>
+      </form>
+      <form id="delete-category-{{ category.id }}" method="post" action="{{ url_for('dashboard.category_delete', category_id=category.id) }}" onsubmit="return confirm('Excluir categoria {{ category.name }}?')"></form>
+      {% endfor %}
     </div>
     {% else %}
     <div class="empty-state">
@@ -61,6 +48,5 @@
     </div>
     {% endif %}
   </section>
-
 </div>
 {% endblock %}

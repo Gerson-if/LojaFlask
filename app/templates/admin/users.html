@@ -5,7 +5,7 @@
 <div class="page-heading">
   <div>
     <div class="page-title">Lojistas</div>
-    <div class="page-subtitle">Gerencie as contas de lojistas da plataforma</div>
+    <div class="page-subtitle">Gerencie contas, acesso e remoção completa de lojas.</div>
   </div>
   <form method="get" class="actions">
     <input class="input-lf" name="q" value="{{ request.args.get('q','') }}" placeholder="Buscar por nome ou e-mail..." style="min-width:240px">
@@ -38,7 +38,7 @@
             <div style="font-weight:600">{{ user.store.name }}</div>
             <div style="font-size:.75rem;color:#94a3b8">/{{ user.store.slug }}</div>
             {% else %}
-            <span style="color:#cbd5e1">—</span>
+            <span style="color:#cbd5e1">-</span>
             {% endif %}
           </td>
           <td>
@@ -50,16 +50,19 @@
             {{ user.created_at.strftime("%d/%m/%Y") }}
           </td>
           <td>
-            <div class="actions" style="flex-wrap:nowrap;gap:.5rem">
+            <div class="actions admin-actions">
               <form method="post" action="{{ url_for('dashboard.admin_user_toggle', user_id=user.id) }}">
                 <button class="btn-sm-lf {{ 'btn-warning-lf' if user.active else 'btn-success-lf' }}">
                   <i class="bi {{ 'bi-pause-circle' if user.active else 'bi-play-circle' }}"></i>
                   {{ "Suspender" if user.active else "Reativar" }}
                 </button>
               </form>
-              <form method="post" action="{{ url_for('dashboard.admin_user_password', user_id=user.id) }}" class="actions" style="flex-wrap:nowrap">
-                <input class="input-lf btn-sm-lf" style="width:130px;min-height:34px" name="password" placeholder="Nova senha">
-                <button class="btn-outline-lf btn-sm-lf"><i class="bi bi-key"></i></button>
+              <form method="post" action="{{ url_for('dashboard.admin_user_password', user_id=user.id) }}" class="actions password-reset-form">
+                <input class="input-lf btn-sm-lf" name="password" placeholder="Nova senha">
+                <button class="btn-outline-lf btn-sm-lf" title="Alterar senha"><i class="bi bi-key"></i></button>
+              </form>
+              <form method="post" action="{{ url_for('dashboard.admin_user_delete', user_id=user.id) }}" onsubmit="return confirm('Excluir este lojista, a loja e todos os arquivos enviados?')">
+                <button class="btn-danger-lf btn-sm-lf"><i class="bi bi-trash"></i> Excluir</button>
               </form>
             </div>
           </td>

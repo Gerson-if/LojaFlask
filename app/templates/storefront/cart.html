@@ -77,6 +77,21 @@
     {% endif %}
   </main>
 
+  <footer class="store-footer">
+    <div class="store-shell store-footer-inner">
+      <div>
+        <strong>{{ store.name }}</strong>
+        <small>Todos os direitos reservados © 2026</small>
+      </div>
+      <div class="store-socials">
+        {% if store.whatsapp %}<a href="https://wa.me/{{ store.whatsapp }}" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>{% endif %}
+        {% if store.instagram_url %}<a href="{{ store.instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram"><i class="bi bi-instagram"></i></a>{% endif %}
+        {% if store.facebook_url %}<a href="{{ store.facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook"><i class="bi bi-facebook"></i></a>{% endif %}
+        {% if store.tiktok_url %}<a href="{{ store.tiktok_url }}" target="_blank" rel="noopener" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>{% endif %}
+      </div>
+    </div>
+  </footer>
+
   <script src="{{ url_for('static', filename='js/storefront.js') }}"></script>
 </body>
 </html>

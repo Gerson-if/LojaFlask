@@ -5,7 +5,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from .. import db
 from ..models import Store, User
-from ..utils import only_digits, slugify
+from ..utils import ensure_store_upload_dirs, only_digits, slugify
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -72,6 +72,7 @@ def register():
             db.session.rollback()
             flash("Este e-mail já está cadastrado.", "danger")
             return render_template("auth/register.html")
+        ensure_store_upload_dirs(store)
         login_user(user)
         return redirect(url_for("dashboard.index"))
     return render_template("auth/register.html")

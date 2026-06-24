@@ -45,6 +45,9 @@ class Store(TimestampMixin, db.Model):
     whatsapp = db.Column(db.String(30), nullable=True)
     city = db.Column(db.String(100), nullable=True)
     logo_url = db.Column(db.Text, nullable=True)
+    instagram_url = db.Column(db.Text, nullable=True)
+    facebook_url = db.Column(db.Text, nullable=True)
+    tiktok_url = db.Column(db.Text, nullable=True)
     primary_color = db.Column(db.String(20), nullable=False, default="#4f46e5")
     secondary_color = db.Column(db.String(20), nullable=False, default="#06b6d4")
 
@@ -140,6 +143,7 @@ class Order(TimestampMixin, db.Model):
     customer_name = db.Column(db.String(140), nullable=False)
     customer_phone = db.Column(db.String(30), nullable=False)
     customer_address = db.Column(db.Text, nullable=True)
+    payment_method = db.Column(db.String(60), nullable=True)
     notes = db.Column(db.Text, nullable=True)
     status = db.Column(
         db.Enum("Pendente", "Confirmado", "Enviado", "Entregue", "Cancelado"),

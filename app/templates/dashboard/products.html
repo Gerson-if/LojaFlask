@@ -1,71 +1,157 @@
 {% extends "base.html" %}
 {% block page_name %}Produtos{% endblock %}
 {% block content %}
-
 <div class="page-heading">
   <div>
     <div class="page-title">Produtos</div>
-    <div class="page-subtitle">Gerencie o catálogo da sua loja</div>
+    <div class="page-subtitle">Gerencie o catálogo em lista para ganhar velocidade conforme a loja cresce.</div>
   </div>
-  <a class="btn-primary-lf" href="{{ url_for('dashboard.product_new') }}">
-    <i class="bi bi-plus-lg"></i> Novo produto
-  </a>
+  <a class="btn-primary-lf" href="{{ url_for('dashboard.product_new') }}"><i class="bi bi-plus-lg"></i> Novo produto</a>
 </div>
 
-<form class="card-lf actions" method="get" style="margin-bottom:1rem;flex-wrap:wrap">
-  <input class="input-lf" style="flex:1;min-width:180px;max-width:320px" name="q" value="{{ request.args.get('q','') }}" placeholder="Buscar produto...">
-  <select class="input-lf" style="min-width:180px;max-width:240px" name="category_id">
-    <option value="">Todas as categorias</option>
+<form class="card-lf filter-bar" method="get">
+  <input class="input-lf" name="q" value="{{ request.args.get('q','') }}" placeholder="Buscar produto...">
+  <select class="input-lf" name="category_id">
+    <option value="">Todas categorias</option>
     {% for category in categories %}
-    <option value="{{ category.id }}" {% if request.args.get('category_id', type=int)==category.id %}selected{% endif %}>{{ category.name }}</option>
+    <option value="{{ category.id }}" {% if request.args.get('category_id')|int == category.id %}selected{% endif %}>{{ category.name }}</option>
     {% endfor %}
   </select>
-  <button class="btn-outline-lf"><i class="bi bi-funnel"></i> Filtrar</button>
+  <button class="btn-outline-lf"><i class="bi bi-search"></i> Filtrar</button>
 </form>
 
-{% if products %}
-<div class="grid grid-3">
-  {% for product in products %}
-  <article class="product-card">
-    {% if product.images %}
-      <img class="product-img" src="{{ product.images[0].image_url }}" alt="{{ product.name }}">
-    {% else %}
-      <div class="product-img-placeholder"><i class="bi bi-image"></i></div>
-    {% endif %}
-    <div class="product-body">
-      <div class="product-category">{{ product.category.name if product.category else "Sem categoria" }}</div>
-      <div style="font-weight:800;font-size:.95rem;line-height:1.3;color:var(--ink)">{{ product.name }}</div>
-      {% if product.description %}
-      <p class="product-summary">{{ product.description }}</p>
-      {% endif %}
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;margin-top:auto">
-        <strong class="product-price">R$ {{ "%.2f"|format(product.final_price) }}</strong>
-        <span class="badge-lf {% if product.status == 'ativo' %}badge-success{% elif product.status == 'destaque' %}badge-warning{% else %}badge-danger{% endif %}">
-          {{ product.status }}
-        </span>
+<section class="card-lf table-card">
+  {% if products %}
+  <div class="table-scroll">
+    <table class="table-lf product-admin-table">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Categoria</th>
+          <th>Preço</th>
+          <th>Estoque</th>
+          <th>Status</th>
+          <th>Atualizado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for product in products %}
+        {% set images = (product.images or [])|sort(attribute='position') %}
+        <tr>
+          <td>
+            <div class="product-list-cell">
+              {% if images %}<img src="{{ images[0].image_url }}" alt="{{ product.name }}">{% else %}<span><i class="bi bi-image"></i></span>{% endif %}
+              <div>
+                <strong>{{ product.name }}</strong>
+                <small>{{ product.description or "Sem descrição" }}</small>
+              </div>
+            </div>
+          </td>
+          <td>{{ product.category.name if product.category else "Sem categoria" }}</td>
+          <td style="white-space:nowrap">
+            {% if product.sale_price %}<small class="old-price">R$ {{ "%.2f"|format(product.price|float) }}</small><br>{% endif %}
+            <strong>R$ {{ "%.2f"|format(product.final_price|float) }}</strong>
+          </td>
+          <td>{{ product.stock }}</td>
+          <td><span class="badge-lf {{ 'badge-success' if product.status != 'inativo' else 'badge-danger' }}">{{ product.status }}</span></td>
+          <td style="white-space:nowrap;color:#64748b">{{ product.updated_at.strftime("%d/%m/%Y") }}</td>
+          <td>
+            <a class="btn-outline-lf btn-sm-lf" href="{{ url_for('dashboard.products', edit=product.id, q=request.args.get('q',''), category_id=request.args.get('category_id','')) }}">
+              <i class="bi bi-pencil"></i> Editar
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">Nenhum produto cadastrado.</div>
+  {% endif %}
+</section>
+
+{% if selected_product %}
+{% set selected_images = (selected_product.images or [])|sort(attribute='position') %}
+<a class="drawer-backdrop is-visible" href="{{ url_for('dashboard.products', q=request.args.get('q',''), category_id=request.args.get('category_id','')) }}" aria-label="Fechar edição"></a>
+<aside class="product-drawer is-open" aria-label="Editar produto">
+  <div class="drawer-header">
+    <div>
+      <h3>Editar produto</h3>
+      <small>{{ selected_product.name }}</small>
+    </div>
+    <a class="icon-btn" href="{{ url_for('dashboard.products', q=request.args.get('q',''), category_id=request.args.get('category_id','')) }}" aria-label="Fechar"><i class="bi bi-x-lg"></i></a>
+  </div>
+
+  {% if selected_images %}
+  <div class="drawer-image-strip">
+    {% for image in selected_images %}
+    <img src="{{ image.image_url }}" alt="{{ selected_product.name }}">
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form class="stack-md" method="post" enctype="multipart/form-data" action="{{ url_for('dashboard.product_edit', product_id=selected_product.id) }}">
+    <div>
+      <label class="form-label-lf">Nome</label>
+      <input class="input-lf" name="name" value="{{ selected_product.name }}" required>
+    </div>
+    <div>
+      <label class="form-label-lf">Categoria</label>
+      <select class="input-lf" name="category_id">
+        <option value="">Sem categoria</option>
+        {% for category in categories %}
+        <option value="{{ category.id }}" {% if selected_product.category_id == category.id %}selected{% endif %}>{{ category.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="grid grid-2">
+      <div>
+        <label class="form-label-lf">Preço</label>
+        <input class="input-lf" name="price" type="number" min="0" step="0.01" value="{{ selected_product.price|float }}" required>
       </div>
-      <div style="font-size:.78rem;color:#94a3b8;margin-top:.15rem">
-        <i class="bi bi-box-seam"></i> {{ product.stock }} em estoque
-      </div>
-      <div class="actions" style="margin-top:.75rem;border-top:1px solid var(--line);padding-top:.75rem">
-        <a class="btn-outline-lf btn-sm-lf" href="{{ url_for('dashboard.product_edit', product_id=product.id) }}">
-          <i class="bi bi-pencil"></i> Editar
-        </a>
-        <form method="post" action="{{ url_for('dashboard.product_delete', product_id=product.id) }}" onsubmit="return confirm('Excluir {{ product.name }}?')">
-          <button class="btn-danger-lf btn-sm-lf"><i class="bi bi-trash"></i> Excluir</button>
-        </form>
+      <div>
+        <label class="form-label-lf">Promo</label>
+        <input class="input-lf" name="sale_price" type="number" min="0" step="0.01" value="{{ selected_product.sale_price|float if selected_product.sale_price else '' }}">
       </div>
     </div>
-  </article>
-  {% endfor %}
-</div>
-{% else %}
-<div class="card-lf empty-state">
-  <i class="bi bi-box-seam" style="font-size:2.5rem;display:block;margin-bottom:.75rem;color:#cbd5e1"></i>
-  Nenhum produto cadastrado ainda.
-  <br><br>
-  <a class="btn-primary-lf" href="{{ url_for('dashboard.product_new') }}"><i class="bi bi-plus-lg"></i> Criar primeiro produto</a>
-</div>
+    <div class="grid grid-2">
+      <div>
+        <label class="form-label-lf">Estoque</label>
+        <input class="input-lf" name="stock" type="number" min="0" value="{{ selected_product.stock or 0 }}">
+      </div>
+      <div>
+        <label class="form-label-lf">Status</label>
+        <select class="input-lf" name="status">
+          {% for status in ["ativo","destaque","inativo"] %}
+          <option {% if selected_product.status == status %}selected{% endif %}>{{ status }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <div>
+      <label class="form-label-lf">Descrição</label>
+      <textarea class="input-lf" name="description" rows="4">{{ selected_product.description or "" }}</textarea>
+    </div>
+    <div>
+      <label class="form-label-lf">Substituir imagens</label>
+      <div class="upload-field">
+        <label class="file-upload file-upload-compact">
+          <input name="image_files" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+          <span class="file-upload-icon"><i class="bi bi-cloud-arrow-up"></i></span>
+          <span class="file-upload-title">Anexar novas imagens</span>
+          <span class="file-upload-hint">Ao anexar novas imagens, as atuais são substituídas.</span>
+        </label>
+        <div class="upload-feedback" data-upload-feedback>Nenhum arquivo selecionado.</div>
+        <div class="upload-preview" data-upload-preview></div>
+      </div>
+    </div>
+    <div class="actions form-actions">
+      <button class="btn-primary-lf"><i class="bi bi-check2"></i> Salvar</button>
+      <button form="delete-product-{{ selected_product.id }}" class="btn-danger-lf" type="submit"><i class="bi bi-trash"></i> Excluir</button>
+    </div>
+  </form>
+  <form id="delete-product-{{ selected_product.id }}" method="post" action="{{ url_for('dashboard.product_delete', product_id=selected_product.id) }}" onsubmit="return confirm('Excluir este produto e suas imagens?')"></form>
+</aside>
 {% endif %}
-
 {% endblock %}

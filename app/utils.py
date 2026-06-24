@@ -30,6 +30,16 @@ def allowed_upload(filename):
     return extension in current_app.config["ALLOWED_UPLOAD_EXTENSIONS"]
 
 
+def store_upload_prefix(store):
+    return f"store-{store.id}"
+
+
+def ensure_store_upload_dirs(store):
+    upload_root = Path(current_app.config["UPLOAD_FOLDER"]).resolve()
+    for folder in ("branding", "banners", "products"):
+        upload_root.joinpath(store_upload_prefix(store), folder).mkdir(parents=True, exist_ok=True)
+
+
 def save_upload(file_storage, *parts):
     if not file_storage or not file_storage.filename:
         return None
@@ -49,6 +59,41 @@ def save_upload(file_storage, *parts):
 
     relative_path = target_path.relative_to(upload_root).as_posix()
     return url_for("static", filename=f"uploads/{relative_path}")
+
+
+def _uploaded_file_path(public_path):
+    if not public_path or "/static/uploads/" not in public_path:
+        return None
+    relative = public_path.split("/static/uploads/", 1)[-1].split("?", 1)[0]
+    upload_root = Path(current_app.config["UPLOAD_FOLDER"]).resolve()
+    target_path = upload_root.joinpath(relative).resolve()
+    if upload_root not in target_path.parents and target_path != upload_root:
+        return None
+    return target_path
+
+
+def delete_uploaded_file(public_path):
+    target_path = _uploaded_file_path(public_path)
+    if target_path and target_path.is_file():
+        target_path.unlink()
+        return True
+    return False
+
+
+def delete_upload_folder(*parts):
+    upload_root = Path(current_app.config["UPLOAD_FOLDER"]).resolve()
+    target_dir = upload_root.joinpath(*[str(part) for part in parts]).resolve()
+    if upload_root not in target_dir.parents and target_dir != upload_root:
+        return False
+    if not target_dir.exists():
+        return False
+    for path in sorted(target_dir.rglob("*"), reverse=True):
+        if path.is_file():
+            path.unlink()
+        elif path.is_dir():
+            path.rmdir()
+    target_dir.rmdir()
+    return True
 
 
 def superadmin_required(view):

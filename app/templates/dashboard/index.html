@@ -1,107 +1,110 @@
 {% extends "base.html" %}
 {% block page_name %}Dashboard{% endblock %}
 {% block content %}
-
 <div class="page-heading">
   <div>
-    <div class="page-title">Olá, {{ current_user.name.split()[0] }}! 👋</div>
-    <div class="page-subtitle">Visão geral da sua operação hoje</div>
+    <div class="page-title">Olá, {{ current_user.name.split()[0] }}!</div>
+    <div class="page-subtitle">Resumo operacional da sua loja.</div>
   </div>
   {% if store %}
-  <a class="btn-outline-lf" href="{{ url_for('storefront.store', slug=store.slug) }}" target="_blank">
-    <i class="bi bi-eye"></i> Ver loja
-  </a>
+  <a class="btn-outline-lf" href="{{ url_for('storefront.store', slug=store.slug) }}" target="_blank"><i class="bi bi-eye"></i> Ver loja</a>
   {% endif %}
 </div>
 
-<div class="grid grid-4" style="margin-bottom:1.25rem">
-  <div class="stat-card">
-    <div class="stat-label">Produtos</div>
-    <div class="stat-value">{{ stats.products }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Pedidos</div>
-    <div class="stat-value">{{ stats.orders }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Clientes</div>
-    <div class="stat-value">{{ stats.customers }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Receita entregue</div>
-    <div class="stat-value" style="font-size:1.5rem">R$ {{ "%.2f"|format(stats.revenue) }}</div>
-  </div>
+<div class="grid grid-4">
+  <div class="stat-card"><div class="stat-label">Produtos ativos</div><div class="stat-value">{{ stats.active_products }}</div></div>
+  <div class="stat-card"><div class="stat-label">Pedidos</div><div class="stat-value">{{ stats.orders }}</div></div>
+  <div class="stat-card"><div class="stat-label">Pendentes</div><div class="stat-value">{{ stats.pending_orders }}</div></div>
+  <div class="stat-card"><div class="stat-label">Receita entregue</div><div class="stat-value">R$ {{ "%.2f"|format(stats.revenue) }}</div></div>
 </div>
 
-<div class="grid grid-2">
+<div class="spacer-md"></div>
+
+<div class="grid grid-2 dashboard-grid">
+  <section class="card-lf">
+    <div class="section-heading-row">
+      <h3>Pedidos por mês</h3>
+      <span class="badge-lf badge-info">6 meses</span>
+    </div>
+    <div class="mini-chart">
+      {% for row in chart_rows %}
+      <div class="chart-column">
+        <div class="chart-bar-wrap"><span class="chart-bar" style="height:{{ row.count_percent or 4 }}%"></span></div>
+        <strong>{{ row.count }}</strong>
+        <small>{{ row.label }}</small>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
 
   <section class="card-lf">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-      <h3 style="margin:0;font-size:1rem;font-weight:800">Pedidos recentes</h3>
-      <a class="btn-outline-lf btn-sm-lf" href="{{ url_for('dashboard.orders') }}">Ver todos</a>
+    <div class="section-heading-row">
+      <h3>Status dos pedidos</h3>
+    </div>
+    <div class="status-stack">
+      {% for row in status_rows %}
+      <div class="status-line">
+        <span>{{ row.label }}</span>
+        <strong>{{ row.count }}</strong>
+      </div>
+      <div class="progress-line"><span style="width:{{ row.percent or 3 }}%"></span></div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<div class="spacer-md"></div>
+
+<div class="grid grid-2 dashboard-grid">
+  <section class="card-lf table-card">
+    <div class="section-heading-row">
+      <h3>Pedidos recentes</h3>
+      <a href="{{ url_for('dashboard.orders') }}">Ver todos</a>
     </div>
     {% if orders %}
     <div class="table-scroll">
       <table class="table-lf">
-        <thead>
-          <tr>
-            <th>Pedido</th>
-            <th>Cliente</th>
-            <th>Total</th>
-            <th>Status</th>
-            <th style="width:60px"></th>
-          </tr>
-        </thead>
+        <thead><tr><th>Pedido</th><th>Cliente</th><th>Total</th><th>Status</th><th></th></tr></thead>
+        <tbody>{% for order in orders %}
+          <tr><td>#{{ order.code }}</td><td>{{ order.customer_name }}</td><td>R$ {{ "%.2f"|format(order.total) }}</td><td>{% include "dashboard/_status.html" %}</td><td><a href="{{ url_for('dashboard.order_detail', order_id=order.id) }}">Ver</a></td></tr>
+        {% endfor %}</tbody>
+      </table>
+    </div>
+    {% else %}<div class="empty-state">Nenhum pedido recebido ainda.</div>{% endif %}
+  </section>
+
+  <section class="card-lf table-card">
+    <div class="section-heading-row">
+      <h3>Estoque baixo</h3>
+      <a href="{{ url_for('dashboard.products') }}">Produtos</a>
+    </div>
+    {% if low_stock %}
+    <div class="table-scroll">
+      <table class="table-lf">
+        <thead><tr><th>Produto</th><th>Estoque</th><th>Status</th></tr></thead>
         <tbody>
-          {% for order in orders %}
+          {% for product in low_stock %}
           <tr>
-            <td style="font-weight:700;white-space:nowrap">#{{ order.code }}</td>
-            <td>{{ order.customer_name }}</td>
-            <td style="white-space:nowrap;font-weight:700">R$ {{ "%.2f"|format(order.total) }}</td>
-            <td>{% include "dashboard/_status.html" %}</td>
-            <td>
-              <a class="btn-outline-lf btn-sm-lf" href="{{ url_for('dashboard.order_detail', order_id=order.id) }}">
-                <i class="bi bi-eye"></i>
-              </a>
-            </td>
+            <td><strong>{{ product.name }}</strong></td>
+            <td>{{ product.stock }}</td>
+            <td>{{ product.status }}</td>
           </tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-    {% else %}
-    <div class="empty-state">
-      <i class="bi bi-receipt" style="font-size:2rem;display:block;margin-bottom:.5rem;color:#cbd5e1"></i>
-      Nenhum pedido recebido ainda.
-    </div>
-    {% endif %}
+    {% else %}<div class="empty-state">Nenhum item com estoque baixo.</div>{% endif %}
   </section>
-
-  <section class="card-lf">
-    <h3 style="margin:0 0 .75rem;font-size:1rem;font-weight:800">Link da sua loja</h3>
-    {% if store %}
-    <p style="color:#64748b;font-size:.875rem;margin:0 0 1rem">
-      Compartilhe este link com seus clientes para eles acessarem seu catálogo público.
-    </p>
-    <a class="btn-outline-lf store-link" href="{{ url_for('storefront.store', slug=store.slug) }}" target="_blank" style="word-break:break-all;text-align:left;justify-content:flex-start;gap:.5rem">
-      <i class="bi bi-link-45deg" style="flex-shrink:0"></i>
-      {{ url_for('storefront.store', slug=store.slug, _external=True) }}
-    </a>
-    <div style="margin-top:1rem;display:flex;gap:.5rem;flex-wrap:wrap">
-      <a class="btn-primary-lf btn-sm-lf" href="{{ url_for('dashboard.products') }}">
-        <i class="bi bi-box-seam"></i> Gerenciar produtos
-      </a>
-      <a class="btn-outline-lf btn-sm-lf" href="{{ url_for('dashboard.store_settings') }}">
-        <i class="bi bi-palette"></i> Personalizar loja
-      </a>
-    </div>
-    {% else %}
-    <div class="empty-state">
-      <i class="bi bi-shop" style="font-size:2rem;display:block;margin-bottom:.5rem;color:#cbd5e1"></i>
-      Complete o cadastro da loja para gerar o link público.
-    </div>
-    {% endif %}
-  </section>
-
 </div>
+
+{% if store %}
+<div class="spacer-md"></div>
+<section class="card-lf store-link-panel">
+  <div>
+    <h3>Link público da loja</h3>
+    <p>Use este endereço para vender pelo catálogo público.</p>
+  </div>
+  <a class="btn-outline-lf store-link" href="{{ url_for('storefront.store', slug=store.slug) }}" target="_blank">{{ url_for('storefront.store', slug=store.slug, _external=True) }}</a>
+</section>
+{% endif %}
 {% endblock %}

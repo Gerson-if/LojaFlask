@@ -5,7 +5,7 @@
 <div class="page-heading">
   <div>
     <div class="page-title">Personalizar loja</div>
-    <div class="page-subtitle">Configure dados públicos, cores, logo e banners.</div>
+    <div class="page-subtitle">Configure dados públicos, redes sociais, cores, logo e banners.</div>
   </div>
   <a class="btn-outline-lf" target="_blank" href="{{ url_for('storefront.store', slug=store.slug) }}">
     <i class="bi bi-eye"></i> Ver loja
@@ -15,7 +15,7 @@
 <form class="card-lf form-panel stack-lg" method="post" enctype="multipart/form-data">
 
   <div>
-    <div style="font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">Informações gerais</div>
+    <div class="form-section-title">Informações gerais</div>
     <div class="grid grid-2">
       <div>
         <label class="form-label-lf">Nome da loja</label>
@@ -38,7 +38,25 @@
   </div>
 
   <div>
-    <div style="font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">Identidade visual</div>
+    <div class="form-section-title">Redes sociais</div>
+    <div class="grid grid-3">
+      <div>
+        <label class="form-label-lf">Instagram</label>
+        <input class="input-lf" name="instagram_url" type="url" placeholder="https://instagram.com/sualoja" value="{{ store.instagram_url or '' }}">
+      </div>
+      <div>
+        <label class="form-label-lf">Facebook</label>
+        <input class="input-lf" name="facebook_url" type="url" placeholder="https://facebook.com/sualoja" value="{{ store.facebook_url or '' }}">
+      </div>
+      <div>
+        <label class="form-label-lf">TikTok</label>
+        <input class="input-lf" name="tiktok_url" type="url" placeholder="https://tiktok.com/@sualoja" value="{{ store.tiktok_url or '' }}">
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="form-section-title">Identidade visual</div>
     <div class="grid grid-2">
       <div>
         <label class="form-label-lf">Cor principal</label>
@@ -54,9 +72,9 @@
   </div>
 
   <div>
-    <div style="font-size:.7rem;font-weight:700;color:#94a3b8;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem">Imagens</div>
+    <div class="form-section-title">Imagens</div>
     <div class="grid grid-2">
-      <div>
+      <div class="upload-field">
         <label class="form-label-lf">Logo da loja</label>
         <label class="file-upload file-upload-compact">
           <input name="logo_file" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
@@ -64,33 +82,41 @@
           <span class="file-upload-title">Anexar logo</span>
           <span class="file-upload-hint">A nova imagem substitui a logo atual.</span>
         </label>
+        <div class="upload-feedback" data-upload-feedback>Nenhum arquivo selecionado.</div>
+        <div class="upload-preview" data-upload-preview></div>
       </div>
-      <div>
+      <div class="upload-field">
         <label class="form-label-lf">Banners da loja</label>
         <label class="file-upload file-upload-compact">
           <input name="banner_files" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
           <span class="file-upload-icon"><i class="bi bi-images"></i></span>
           <span class="file-upload-title">Anexar banners</span>
-          <span class="file-upload-hint">Imagens largas (16:9). Novos banners substituem os atuais.</span>
+          <span class="file-upload-hint">Imagens largas. Novos banners substituem os atuais.</span>
         </label>
+        <div class="upload-feedback" data-upload-feedback>Nenhum arquivo selecionado.</div>
+        <div class="upload-preview" data-upload-preview></div>
       </div>
     </div>
   </div>
 
   {% if store.logo_url or store.banners %}
-  <div class="preview-panel">
+  <div class="preview-panel media-preview-panel">
     {% if store.logo_url %}
-    <div>
+    <div class="media-preview-card">
       <div class="form-label-lf">Logo atual</div>
       <img src="{{ store.logo_url }}" alt="{{ store.name }}" class="logo-preview">
+      <button form="remove-logo-form" class="btn-danger-lf btn-sm-lf" type="submit"><i class="bi bi-trash"></i> Remover logo</button>
     </div>
     {% endif %}
     {% if store.banners %}
     <div class="preview-wide">
       <div class="form-label-lf">Banners atuais</div>
-      <div class="thumb-grid">
+      <div class="media-banner-grid">
         {% for banner in store.banners|sort(attribute='position') %}
-        <img src="{{ banner.image_url }}" alt="Banner {{ loop.index }}" class="thumb-preview wide">
+        <div class="media-preview-card">
+          <img src="{{ banner.image_url }}" alt="Banner {{ loop.index }}" class="thumb-preview wide">
+          <button form="remove-banner-{{ banner.id }}" class="btn-danger-lf btn-sm-lf" type="submit"><i class="bi bi-trash"></i> Remover</button>
+        </div>
         {% endfor %}
       </div>
     </div>
@@ -101,6 +127,12 @@
   <div class="actions form-actions">
     <button class="btn-primary-lf"><i class="bi bi-check2"></i> Salvar configurações</button>
   </div>
-
 </form>
+
+{% if store.logo_url %}
+<form id="remove-logo-form" method="post" action="{{ url_for('dashboard.store_logo_delete') }}" onsubmit="return confirm('Remover a logo atual?')"></form>
+{% endif %}
+{% for banner in store.banners|sort(attribute='position') %}
+<form id="remove-banner-{{ banner.id }}" method="post" action="{{ url_for('dashboard.store_banner_delete', banner_id=banner.id) }}" onsubmit="return confirm('Remover este banner?')"></form>
+{% endfor %}
 {% endblock %}

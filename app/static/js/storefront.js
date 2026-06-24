@@ -1,5 +1,6 @@
 (() => {
   const toast = document.querySelector("[data-store-toast]");
+  const body = document.body;
 
   const showToast = (message, isError = false) => {
     if (!toast) return;
@@ -59,6 +60,66 @@
       }
     });
   });
+
+  const sidebar = document.querySelector("[data-category-drawer]");
+  const sidebarToggleButtons = document.querySelectorAll("[data-category-toggle]");
+  const sidebarCloseButtons = document.querySelectorAll("[data-category-close]");
+  const sidebarStorageKey = "storefront-sidebar-collapsed";
+  const isMobile = () => window.matchMedia("(max-width: 900px)").matches;
+
+  const syncSidebar = () => {
+    if (!sidebar) return;
+    if (isMobile()) {
+      body.classList.remove("store-sidebar-collapsed");
+      body.classList.remove("store-sidebar-open");
+      return;
+    }
+    if (localStorage.getItem(sidebarStorageKey) === "1") {
+      body.classList.add("store-sidebar-collapsed");
+    } else {
+      body.classList.remove("store-sidebar-collapsed");
+    }
+  };
+
+  const closeMobileSidebar = () => body.classList.remove("store-sidebar-open");
+
+  sidebarToggleButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      if (!sidebar) return;
+      if (isMobile()) {
+        body.classList.toggle("store-sidebar-open");
+        return;
+      }
+      body.classList.toggle("store-sidebar-collapsed");
+      localStorage.setItem(
+        sidebarStorageKey,
+        body.classList.contains("store-sidebar-collapsed") ? "1" : "0"
+      );
+    });
+  });
+
+  sidebarCloseButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      if (isMobile()) {
+        closeMobileSidebar();
+        return;
+      }
+      body.classList.toggle("store-sidebar-collapsed");
+      localStorage.setItem(
+        sidebarStorageKey,
+        body.classList.contains("store-sidebar-collapsed") ? "1" : "0"
+      );
+    });
+  });
+
+  sidebar?.addEventListener("click", (event) => {
+    if (isMobile() && event.target.closest("a")) {
+      closeMobileSidebar();
+    }
+  });
+
+  window.addEventListener("resize", syncSidebar);
+  syncSidebar();
 
   document.querySelectorAll("[data-carousel]").forEach((carousel) => {
     const slides = Array.from(

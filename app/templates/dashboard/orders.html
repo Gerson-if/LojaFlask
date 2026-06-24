@@ -26,6 +26,7 @@
         <tr>
           <th>Pedido</th>
           <th>Cliente</th>
+          <th>Pagamento</th>
           <th>Total</th>
           <th>Status</th>
           <th>Data</th>
@@ -37,6 +38,7 @@
         <tr>
           <td style="font-weight:700;white-space:nowrap">#{{ order.code }}</td>
           <td>{{ order.customer_name }}</td>
+          <td>{{ order.payment_method or "-" }}</td>
           <td style="white-space:nowrap;font-weight:700">R$ {{ "%.2f"|format(order.total) }}</td>
           <td>{% include "dashboard/_status.html" %}</td>
           <td style="white-space:nowrap;color:#64748b;font-size:.875rem">{{ order.created_at.strftime("%d/%m/%Y") }}</td>

@@ -1,111 +1,84 @@
 {% extends "base.html" %}
 {% block page_name %}Super admin{% endblock %}
 {% block content %}
-
 <div class="page-heading">
   <div>
     <div class="page-title">Painel da plataforma</div>
-    <div class="page-subtitle">Visão geral de lojistas, lojas e pedidos</div>
+    <div class="page-subtitle">Visão geral de lojistas, lojas e catálogo cadastrado.</div>
   </div>
+  <a class="btn-primary-lf" href="{{ url_for('dashboard.admin_users') }}"><i class="bi bi-people"></i> Gerenciar lojistas</a>
 </div>
 
-<div class="grid grid-4" style="margin-bottom:1.25rem">
-  <div class="stat-card">
-    <div class="stat-label">Lojistas</div>
-    <div class="stat-value">{{ users }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Lojas</div>
-    <div class="stat-value">{{ stores }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Pedidos</div>
-    <div class="stat-value">{{ orders }}</div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-label">Receita entregue</div>
-    <div class="stat-value" style="font-size:1.5rem">R$ {{ "%.2f"|format(revenue) }}</div>
-  </div>
+<div class="grid grid-4">
+  <div class="stat-card"><div class="stat-label">Lojistas</div><div class="stat-value">{{ users }}</div></div>
+  <div class="stat-card"><div class="stat-label">Lojas criadas</div><div class="stat-value">{{ stores }}</div></div>
+  <div class="stat-card"><div class="stat-label">Produtos cadastrados</div><div class="stat-value">{{ products_total }}</div></div>
+  <div class="stat-card"><div class="stat-label">Clientes nas lojas</div><div class="stat-value">{{ customers_total }}</div></div>
 </div>
 
-<div class="grid grid-2">
+<div class="spacer-md"></div>
 
+<div class="grid grid-2 dashboard-grid">
   <section class="card-lf">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-      <h3 style="margin:0;font-size:1rem;font-weight:800">Pedidos recentes</h3>
-      <a class="btn-outline-lf btn-sm-lf" href="{{ url_for('dashboard.admin_orders') }}">Ver todos</a>
+    <div class="section-heading-row">
+      <h3>Crescimento de lojas</h3>
+      <span class="badge-lf badge-info">6 meses</span>
     </div>
-    {% if recent_orders %}
-    <div class="table-scroll">
-      <table class="table-lf">
-        <thead>
-          <tr>
-            <th>Pedido</th>
-            <th>Loja</th>
-            <th>Total</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for order in recent_orders %}
-          <tr>
-            <td style="font-weight:700;white-space:nowrap">#{{ order.code }}</td>
-            <td style="color:#64748b">{{ order.store.name }}</td>
-            <td style="white-space:nowrap;font-weight:700">R$ {{ "%.2f"|format(order.total) }}</td>
-            <td>{% include "dashboard/_status.html" %}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="mini-chart">
+      {% for row in chart_rows %}
+      <div class="chart-column">
+        <div class="chart-bar-wrap"><span class="chart-bar" style="height:{{ row.count_percent or 4 }}%"></span></div>
+        <strong>{{ row.count }}</strong>
+        <small>{{ row.label }}</small>
+      </div>
+      {% endfor %}
     </div>
-    {% else %}
-    <div class="empty-state">
-      <i class="bi bi-receipt" style="font-size:2rem;display:block;margin-bottom:.5rem;color:#cbd5e1"></i>
-      Nenhum pedido na plataforma ainda.
-    </div>
-    {% endif %}
   </section>
 
   <section class="card-lf">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-      <h3 style="margin:0;font-size:1rem;font-weight:800">Lojistas recentes</h3>
-      <a class="btn-outline-lf btn-sm-lf" href="{{ url_for('dashboard.admin_users') }}">Ver todos</a>
+    <div class="section-heading-row">
+      <h3>Status dos lojistas</h3>
     </div>
-    {% if recent_users %}
-    <div class="table-scroll">
-      <table class="table-lf">
-        <thead>
-          <tr>
-            <th>Lojista</th>
-            <th>Loja</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for user in recent_users %}
-          <tr>
-            <td>
-              <div style="font-weight:700">{{ user.name }}</div>
-              <div style="font-size:.75rem;color:#94a3b8">{{ user.email }}</div>
-            </td>
-            <td style="color:#64748b">{{ user.store.name if user.store else "—" }}</td>
-            <td>
-              <span class="badge-lf {{ 'badge-success' if user.active else 'badge-danger' }}">
-                {{ "Ativa" if user.active else "Suspensa" }}
-              </span>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="status-stack">
+      <div class="status-line">
+        <span>Ativos</span>
+        <strong>{{ active_users }}</strong>
+      </div>
+      <div class="progress-line"><span style="width:{{ (active_users / users * 100) if users else 0 }}%"></span></div>
+      <div class="status-line">
+        <span>Suspensos</span>
+        <strong>{{ suspended_users }}</strong>
+      </div>
+      <div class="progress-line muted"><span style="width:{{ (suspended_users / users * 100) if users else 0 }}%"></span></div>
     </div>
-    {% else %}
-    <div class="empty-state">
-      <i class="bi bi-people" style="font-size:2rem;display:block;margin-bottom:.5rem;color:#cbd5e1"></i>
-      Nenhum lojista cadastrado ainda.
-    </div>
-    {% endif %}
   </section>
-
 </div>
+
+<div class="spacer-md"></div>
+
+<section class="card-lf table-card">
+  <div class="section-heading-row">
+    <h3>Lojas com maior catálogo</h3>
+  </div>
+  {% if top_stores %}
+  <div class="table-scroll">
+    <table class="table-lf">
+      <thead><tr><th>Loja</th><th>Lojista</th><th>Produtos</th><th>Clientes</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for store in top_stores %}
+        <tr>
+          <td><strong>{{ store.name }}</strong><br><small>/{{ store.slug }}</small></td>
+          <td>{{ store.owner.name }}</td>
+          <td>{{ store.products|length }}</td>
+          <td>{{ store.customers|length }}</td>
+          <td><span class="badge-lf {{ 'badge-success' if store.owner.active else 'badge-danger' }}">{{ "Ativa" if store.owner.active else "Suspensa" }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">Nenhuma loja criada ainda.</div>
+  {% endif %}
+</section>
 {% endblock %}

@@ -59,12 +59,16 @@
 
   <div>
     <label class="form-label-lf">Imagens do produto</label>
-    <label class="file-upload">
-      <input name="image_files" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
-      <span class="file-upload-icon"><i class="bi bi-cloud-arrow-up"></i></span>
-      <span class="file-upload-title">Clique ou arraste as imagens aqui</span>
-      <span class="file-upload-hint">JPG, PNG, WEBP ou GIF — você pode selecionar várias imagens.<br>Ao editar, novos anexos substituem as imagens atuais.</span>
-    </label>
+    <div class="upload-field">
+      <label class="file-upload">
+        <input name="image_files" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple>
+        <span class="file-upload-icon"><i class="bi bi-cloud-arrow-up"></i></span>
+        <span class="file-upload-title">Clique ou arraste as imagens aqui</span>
+        <span class="file-upload-hint">JPG, PNG, WEBP ou GIF — você pode selecionar várias imagens.<br>Ao editar, novos anexos substituem as imagens atuais.</span>
+      </label>
+      <div class="upload-feedback" data-upload-feedback>Nenhum arquivo selecionado.</div>
+      <div class="upload-preview" data-upload-preview></div>
+    </div>
   </div>
 
   {% if product and product.images %}

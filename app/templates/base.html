@@ -20,7 +20,6 @@
         <a class="nav-item-s" href="{{ url_for('dashboard.index') }}"><i class="bi bi-speedometer2"></i> <span class="sidebar-text">Dashboard</span></a>
         {% if current_user.is_superadmin() %}
         <a class="nav-item-s" href="{{ url_for('dashboard.admin_users') }}"><i class="bi bi-people"></i> <span class="sidebar-text">Lojistas</span></a>
-        <a class="nav-item-s" href="{{ url_for('dashboard.admin_orders') }}"><i class="bi bi-receipt"></i> <span class="sidebar-text">Pedidos</span></a>
         {% else %}
         <a class="nav-item-s" href="{{ url_for('dashboard.products') }}"><i class="bi bi-box-seam"></i> <span class="sidebar-text">Produtos</span></a>
         <a class="nav-item-s" href="{{ url_for('dashboard.categories') }}"><i class="bi bi-tags"></i> <span class="sidebar-text">Categorias</span></a>
@@ -48,7 +47,7 @@
     <button class="sidebar-backdrop" type="button" aria-label="Fechar menu"></button>
     <div class="topbar">
       <div class="actions topbar-left">
-        <button class="icon-btn sidebar-toggle" type="button" aria-label="Alternar menu" aria-controls="appSidebar"><i class="bi bi-list"></i></button>
+        <button class="icon-btn sidebar-toggle" type="button" aria-label="Alternar menu" aria-controls="appSidebar"><i class="bi bi-layout-sidebar-inset"></i></button>
         <div>
           <strong>{% block page_name %}Dashboard{% endblock %}</strong>
           {% if current_user.store %}<span class="topbar-slug">/{{ current_user.store.slug }}</span>{% endif %}
@@ -93,6 +92,7 @@
       });
     })();
   </script>
+  <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
   {% else %}
     {% block public_content %}{% endblock %}
   {% endif %}
