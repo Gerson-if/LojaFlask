@@ -234,12 +234,65 @@ def cart_add(slug, product_id):
     return redirect(request.referrer or url_for("storefront.store", slug=slug))
 
 
+@storefront_bp.route("/loja/<slug>/carrinho/atualizar", methods=["POST"])
+def cart_update(slug):
+    """Atualiza ou remove um item do carrinho via fetch (sem reload de página).
+
+    Espera `product_id` e `quantity` (form-encoded). quantity <= 0 remove o item.
+    Sempre responde em JSON: usado pela tela /carrinho para refletir a mudança
+    ao vivo (badge do header, subtotal da linha e total do pedido).
+    """
+    store = active_store_or_404(slug)
+    product_id = request.form.get("product_id", type=int)
+    quantity = request.form.get("quantity", type=int)
+
+    if product_id is None or quantity is None:
+        return jsonify({"ok": False, "message": "Requisição inválida."}), 400
+
+    product = Product.query.filter(
+        Product.id == product_id,
+        Product.store_id == store.id,
+    ).first()
+    if not product:
+        return jsonify({"ok": False, "message": "Produto não encontrado."}), 404
+
+    cart = current_cart(store.id)
+    product_key = str(product.id)
+
+    if quantity <= 0:
+        cart.pop(product_key, None)
+        line_quantity = 0
+    else:
+        line_quantity = min(quantity, max(product.stock, 0))
+        if line_quantity <= 0:
+            cart.pop(product_key, None)
+            line_quantity = 0
+        else:
+            cart[product_key] = line_quantity
+    session.modified = True
+
+    items = cart_items_for(store)
+    total = cart_total(items)
+
+    return jsonify(
+        {
+            "ok": True,
+            "cart_count": cart_count(cart),
+            "line_quantity": line_quantity,
+            "removed": line_quantity <= 0,
+            "total": float(total),
+        }
+    )
+
+
 @storefront_bp.route("/loja/<slug>/carrinho", methods=["GET", "POST"])
 def cart(slug):
     store = active_store_or_404(slug)
     cart = current_cart(store.id)
     items = cart_items_for(store)
     if request.method == "POST":
+        # Fallback sem JavaScript: o formulário antigo (recarrega a página)
+        # continua funcionando para quem desabilitar o JS no navegador.
         for product, _qty in items:
             qty = request.form.get(f"qty_{product.id}", type=int) or 0
             if qty <= 0:
@@ -257,6 +310,29 @@ def cart(slug):
     )
 
 
+def _build_structured_address(form):
+    """Monta um endereço de texto único a partir dos campos estruturados do
+    checkout, mantendo compatibilidade com a coluna `address` já existente
+    em Customer/Order (texto livre), sem exigir migração de banco agora.
+    """
+    street = form.get("street", "").strip()
+    number = form.get("number", "").strip()
+    complement = form.get("complement", "").strip()
+    neighborhood = form.get("neighborhood", "").strip()
+    city = form.get("city", "").strip()
+    state = form.get("state", "").strip().upper()
+    zip_code = only_digits(form.get("zip_code", ""))
+
+    line1 = ", ".join(part for part in [street, number] if part)
+    line2 = " - ".join(part for part in [neighborhood, complement] if part)
+    line3 = "/".join(part for part in [city, state] if part)
+
+    pieces = [piece for piece in [line1, line2, line3] if piece]
+    if zip_code:
+        pieces.append(f"CEP {zip_code}")
+    return ", ".join(pieces)
+
+
 @storefront_bp.route("/loja/<slug>/checkout", methods=["GET", "POST"])
 def checkout(slug):
     store = active_store_or_404(slug)
@@ -268,18 +344,29 @@ def checkout(slug):
     if request.method == "POST":
         name = request.form.get("name", "").strip()
         phone = only_digits(request.form.get("phone"))
-        address = request.form.get("address", "").strip()
+        email = request.form.get("email", "").strip()
         payment_method = request.form.get("payment_method", "").strip()
         notes = request.form.get("notes", "").strip()
-        if not name or not phone or not payment_method:
+        address = _build_structured_address(request.form)
+
+        form_data = request.form
+
+        if not name or not phone or not email or not payment_method:
             return render_template(
                 "storefront/checkout.html",
                 store=store,
                 items=items,
                 total=total,
-                error="Informe nome, WhatsApp e forma de pagamento.",
+                error="Informe nome, WhatsApp, e-mail e forma de pagamento.",
                 cart_count=cart_count(cart),
+                form_data=form_data,
             )
+
+        # `Customer`/`Order` ainda não têm coluna própria de e-mail neste
+        # banco. Para não perder o dado, ele vai junto das observações até
+        # que uma migração adicione `email` em Customer/Order.
+        notes_with_email = f"E-mail: {email}" + (f"\n{notes}" if notes else "")
+
         customer = Customer.query.filter_by(store_id=store.id, phone=phone).first()
         if not customer:
             customer = Customer(store_id=store.id, name=name, phone=phone)
@@ -297,7 +384,7 @@ def checkout(slug):
             customer_phone=phone,
             customer_address=address,
             payment_method=payment_method,
-            notes=notes,
+            notes=notes_with_email,
             total=total,
         )
         for product, qty in items:
@@ -324,6 +411,7 @@ def checkout(slug):
                     total=total,
                     error="Não foi possível registrar o pedido. Tente novamente.",
                     cart_count=cart_count(cart),
+                    form_data=form_data,
                 ),
                 500,
             )
@@ -334,6 +422,7 @@ def checkout(slug):
             f"*Pedido:* #{order.code}",
             f"*Cliente:* {name}",
             f"*WhatsApp:* {phone}",
+            f"*E-mail:* {email}",
         ]
         if address:
             message.append(f"*Endereço:* {address}")

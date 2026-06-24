@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ product.name }} - {{ store.name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   <style>:root{--primary:{{ store.primary_color }};--accent:{{ store.secondary_color }}}</style>
@@ -44,7 +47,7 @@
         <a class="store-cart-link" href="{{ url_for('storefront.cart', slug=store.slug) }}" aria-label="Carrinho">
           <span class="store-cart-icon">
             <i class="bi bi-cart3"></i>
-            <span data-cart-count>{{ cart_count }}</span>
+            <span data-cart-count>{{ cart_count if cart_count else '' }}</span>
           </span>
           <span class="store-cart-text">Carrinho</span>
         </a>
@@ -59,8 +62,8 @@
           <h3>Categorias</h3>
           <small>Navegação rápida</small>
         </div>
-        <button class="icon-btn" type="button" data-category-toggle aria-label="Recolher categorias">
-          <i class="bi bi-layout-sidebar-inset"></i>
+        <button class="drawer-close-btn" type="button" data-category-close aria-label="Fechar categorias">
+          <i class="bi bi-x-lg"></i>
         </button>
       </div>
       <nav class="category-drawer-list" aria-label="Categorias">
@@ -152,7 +155,20 @@
             <div class="product-body">
               <div class="product-category">{{ related.category.name if related.category else "" }}</div>
               <a class="product-title-link" href="{{ url_for('storefront.product_detail', slug=store.slug, product_id=related.id, categoria=selected_category_id, q=search_query, sort=sort) }}">{{ related.name }}</a>
-              <strong class="product-price">R$ {{ "%.2f"|format(related.final_price) }}</strong>
+              <div class="price-row">
+                <div>
+                  {% if related.sale_price %}<div class="old-price">R$ {{ "%.2f"|format(related.price) }}</div>{% endif %}
+                  <strong class="product-price">R$ {{ "%.2f"|format(related.final_price) }}</strong>
+                </div>
+              </div>
+              {% if related.stock > 0 %}
+              <form class="js-add-to-cart" method="post" action="{{ url_for('storefront.cart_add', slug=store.slug, product_id=related.id) }}">
+                <input type="hidden" name="quantity" value="1">
+                <button class="btn-primary-lf product-add-btn" type="submit"><i class="bi bi-cart-plus"></i> Adicionar</button>
+              </form>
+              {% else %}
+              <div class="stock-empty">Sem estoque</div>
+              {% endif %}
             </div>
           </article>
           {% endfor %}
@@ -161,28 +177,7 @@
       {% endif %}
     </main>
 
-    <footer class="store-footer store-footer-offset">
-      <div class="store-shell store-footer-inner">
-        <div>
-          <strong>{{ store.name }}</strong>
-          <small>Todos os direitos reservados © 2026</small>
-        </div>
-        <div class="store-footer-meta">
-          <div class="store-socials">
-            {% if store.whatsapp %}<a href="https://wa.me/{{ store.whatsapp }}" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>{% endif %}
-            {% if store.instagram_url %}<a href="{{ store.instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram"><i class="bi bi-instagram"></i></a>{% endif %}
-            {% if store.facebook_url %}<a href="{{ store.facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook"><i class="bi bi-facebook"></i></a>{% endif %}
-            {% if store.tiktok_url %}<a href="{{ store.tiktok_url }}" target="_blank" rel="noopener" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>{% endif %}
-          </div>
-          <div class="store-payments" aria-label="Formas de pagamento">
-            <span>VISA</span>
-            <span>Mastercard</span>
-            <span>Elo</span>
-            <span>Pix</span>
-          </div>
-        </div>
-      </div>
-    </footer>
+    {% include "storefront/_store_footer.html" with context %}
   </div>
 
   <div class="store-toast" data-store-toast></div>

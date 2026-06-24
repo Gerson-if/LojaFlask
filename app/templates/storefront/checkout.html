@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Checkout - {{ store.name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   <style>:root{--primary:{{ store.primary_color }};--accent:{{ store.secondary_color }}}</style>
@@ -32,43 +35,118 @@
 
     {% if error %}<div class="flash flash-danger">{{ error }}</div>{% endif %}
 
+    <div class="checkout-stepper" data-checkout-stepper>
+      <div class="step is-active" data-step="1">
+        <span class="step-circle">1</span>
+        <span class="step-label">Seus dados</span>
+      </div>
+      <div class="step-divider"></div>
+      <div class="step" data-step="2">
+        <span class="step-circle">2</span>
+        <span class="step-label">Entrega e pagamento</span>
+      </div>
+    </div>
+
     <div class="checkout-layout">
-      <form class="card-lf stack-md" method="post">
-        <div>
-          <label class="form-label-lf">Nome completo</label>
-          <input class="input-lf" name="name" placeholder="Seu nome" required>
+      <form class="card-lf checkout-panel" method="post" data-checkout-form novalidate>
+
+        <!-- Etapa 1: dados pessoais -->
+        <div class="checkout-step-panel is-active" data-step-panel="1">
+          <div class="checkout-fieldset">
+            <div class="checkout-section-title">Quem está comprando</div>
+            <div>
+              <label class="form-label-lf" for="ck-name">Nome completo</label>
+              <input class="input-lf" id="ck-name" name="name" placeholder="Seu nome" value="{{ form_data.name if form_data else '' }}" required>
+            </div>
+            <div class="checkout-row-2">
+              <div>
+                <label class="form-label-lf" for="ck-phone">WhatsApp</label>
+                <input class="input-lf" id="ck-phone" name="phone" placeholder="(00) 00000-0000" value="{{ form_data.phone if form_data else '' }}" required inputmode="tel">
+              </div>
+              <div>
+                <label class="form-label-lf" for="ck-email">E-mail</label>
+                <input class="input-lf" id="ck-email" name="email" type="email" placeholder="voce@email.com" value="{{ form_data.email if form_data else '' }}" required>
+              </div>
+            </div>
+            <small class="help-text">Usamos seu WhatsApp e e-mail só para confirmar o pedido e avisar sobre a entrega.</small>
+          </div>
+          <div class="checkout-actions">
+            <span></span>
+            <button class="btn-primary-lf" type="button" data-checkout-next>Continuar <i class="bi bi-arrow-right"></i></button>
+          </div>
         </div>
-        <div>
-          <label class="form-label-lf">WhatsApp</label>
-          <input class="input-lf" name="phone" placeholder="(00) 00000-0000" required>
+
+        <!-- Etapa 2: entrega, pagamento, revisão -->
+        <div class="checkout-step-panel" data-step-panel="2">
+          <div class="checkout-fieldset">
+            <div class="checkout-section-title">Endereço de entrega</div>
+            <div class="checkout-row-3">
+              <div>
+                <label class="form-label-lf" for="ck-zip">CEP</label>
+                <input class="input-lf" id="ck-zip" name="zip_code" placeholder="00000-000" value="{{ form_data.zip_code if form_data else '' }}" inputmode="numeric">
+              </div>
+              <div style="grid-column: span 2;">
+                <label class="form-label-lf" for="ck-street">Rua</label>
+                <input class="input-lf" id="ck-street" name="street" placeholder="Rua, avenida..." value="{{ form_data.street if form_data else '' }}">
+              </div>
+            </div>
+            <div class="checkout-row-3">
+              <div>
+                <label class="form-label-lf" for="ck-number">Número</label>
+                <input class="input-lf" id="ck-number" name="number" placeholder="123" value="{{ form_data.number if form_data else '' }}">
+              </div>
+              <div>
+                <label class="form-label-lf" for="ck-complement">Complemento</label>
+                <input class="input-lf" id="ck-complement" name="complement" placeholder="Apto, bloco..." value="{{ form_data.complement if form_data else '' }}">
+              </div>
+              <div>
+                <label class="form-label-lf" for="ck-neighborhood">Bairro</label>
+                <input class="input-lf" id="ck-neighborhood" name="neighborhood" placeholder="Bairro" value="{{ form_data.neighborhood if form_data else '' }}">
+              </div>
+            </div>
+            <div class="checkout-row-2">
+              <div>
+                <label class="form-label-lf" for="ck-city">Cidade</label>
+                <input class="input-lf" id="ck-city" name="city" placeholder="Cidade" value="{{ form_data.city if form_data else '' }}">
+              </div>
+              <div>
+                <label class="form-label-lf" for="ck-state">Estado</label>
+                <input class="input-lf" id="ck-state" name="state" placeholder="UF" maxlength="2" style="text-transform:uppercase" value="{{ form_data.state if form_data else '' }}">
+              </div>
+            </div>
+          </div>
+
+          <div class="checkout-fieldset">
+            <div class="checkout-section-title">Pagamento</div>
+            <div>
+              <label class="form-label-lf" for="ck-payment">Forma de pagamento</label>
+              <select class="input-lf" id="ck-payment" name="payment_method" required>
+                <option value="">Selecione</option>
+                <option {% if form_data and form_data.payment_method == "Pix" %}selected{% endif %}>Pix</option>
+                <option {% if form_data and form_data.payment_method == "Cartão de crédito" %}selected{% endif %}>Cartão de crédito</option>
+                <option {% if form_data and form_data.payment_method == "Cartão de débito" %}selected{% endif %}>Cartão de débito</option>
+                <option {% if form_data and form_data.payment_method == "Dinheiro" %}selected{% endif %}>Dinheiro</option>
+                <option {% if form_data and form_data.payment_method == "Combinar pelo WhatsApp" %}selected{% endif %}>Combinar pelo WhatsApp</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label-lf" for="ck-notes">Observações</label>
+              <textarea class="input-lf" id="ck-notes" name="notes" rows="3" placeholder="Alguma observação para o pedido?">{{ form_data.notes if form_data else '' }}</textarea>
+            </div>
+          </div>
+
+          <div class="checkout-actions">
+            <button class="btn-outline-lf" type="button" data-checkout-back><i class="bi bi-arrow-left"></i> Voltar</button>
+            <button class="btn-primary-lf" type="submit"><i class="bi bi-bag-check"></i> Enviar pedido</button>
+          </div>
         </div>
-        <div>
-          <label class="form-label-lf">Endereço de entrega</label>
-          <textarea class="input-lf" name="address" rows="3" placeholder="Rua, número, bairro, cidade..."></textarea>
-        </div>
-        <div>
-          <label class="form-label-lf">Forma de pagamento</label>
-          <select class="input-lf" name="payment_method" required>
-            <option value="">Selecione</option>
-            <option>Pix</option>
-            <option>Cartão de crédito</option>
-            <option>Cartão de débito</option>
-            <option>Dinheiro</option>
-            <option>Combinar pelo WhatsApp</option>
-          </select>
-        </div>
-        <div>
-          <label class="form-label-lf">Observações</label>
-          <textarea class="input-lf" name="notes" rows="3" placeholder="Alguma observação para o pedido?"></textarea>
-        </div>
-        <button class="btn-primary-lf full-btn" type="submit"><i class="bi bi-bag-check"></i> Enviar pedido</button>
       </form>
 
       <section class="card-lf checkout-summary">
         <h3 style="margin: 0 0 .5rem; font-size: 1rem;">Resumo do pedido</h3>
         {% for product, qty in items %}
         <div class="summary-line">
-          <span>{{ product.name }} <strong style="color: var(--ink);">x{{ qty }}</strong></span>
+          <span>{{ product.name }} <strong style="color: var(--store-ink);">x{{ qty }}</strong></span>
           <strong>R$ {{ "%.2f"|format(product.final_price * qty) }}</strong>
         </div>
         {% endfor %}
@@ -80,19 +158,8 @@
     </div>
   </main>
 
-  <footer class="store-footer">
-    <div class="store-shell store-footer-inner">
-      <div>
-        <strong>{{ store.name }}</strong>
-        <small>Todos os direitos reservados © 2026</small>
-      </div>
-      <div class="store-socials">
-        {% if store.whatsapp %}<a href="https://wa.me/{{ store.whatsapp }}" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>{% endif %}
-        {% if store.instagram_url %}<a href="{{ store.instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram"><i class="bi bi-instagram"></i></a>{% endif %}
-        {% if store.facebook_url %}<a href="{{ store.facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook"><i class="bi bi-facebook"></i></a>{% endif %}
-        {% if store.tiktok_url %}<a href="{{ store.tiktok_url }}" target="_blank" rel="noopener" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>{% endif %}
-      </div>
-    </div>
-  </footer>
+  {% include "storefront/_store_footer.html" with context %}
+
+  <script src="{{ url_for('static', filename='js/storefront.js') }}"></script>
 </body>
 </html>

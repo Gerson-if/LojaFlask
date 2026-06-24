@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ store.name }}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   <style>:root{--primary:{{ store.primary_color }};--accent:{{ store.secondary_color }}}</style>
@@ -40,7 +43,7 @@
         <a class="store-cart-link" href="{{ url_for('storefront.cart', slug=store.slug) }}" aria-label="Carrinho">
           <span class="store-cart-icon">
             <i class="bi bi-cart3"></i>
-            <span data-cart-count>{{ cart_count }}</span>
+            <span data-cart-count>{{ cart_count if cart_count else '' }}</span>
           </span>
           <span class="store-cart-text">Carrinho</span>
         </a>
@@ -55,8 +58,8 @@
           <h3>Categorias</h3>
           <small>Navegação rápida</small>
         </div>
-        <button class="icon-btn" type="button" data-category-toggle aria-label="Recolher categorias">
-          <i class="bi bi-layout-sidebar-inset"></i>
+        <button class="drawer-close-btn" type="button" data-category-close aria-label="Fechar categorias">
+          <i class="bi bi-x-lg"></i>
         </button>
       </div>
       <nav class="category-drawer-list" aria-label="Categorias">
@@ -74,36 +77,39 @@
     </aside>
 
     <main class="store-shell store-main">
+      {% if banners %}
+      <section class="store-hero-banner-only" data-carousel>
+        <div class="store-hero-slides">
+          {% for banner in banners %}
+          <img class="store-hero-slide {% if loop.first %}is-active{% endif %}" src="{{ banner.image_url }}" alt="Banner {{ loop.index }} de {{ store.name }}">
+          {% endfor %}
+        </div>
+        {% if banners|length > 1 %}
+        <button class="carousel-control carousel-prev" type="button" data-carousel-prev aria-label="Banner anterior"><i class="bi bi-chevron-left"></i></button>
+        <button class="carousel-control carousel-next" type="button" data-carousel-next aria-label="Próximo banner"><i class="bi bi-chevron-right"></i></button>
+        <div class="carousel-dots">
+          {% for banner in banners %}
+          <button class="{% if loop.first %}is-active{% endif %}" type="button" data-carousel-dot="{{ loop.index0 }}" aria-label="Ir para banner {{ loop.index }}"></button>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </section>
+      {% else %}
       <section class="store-hero-panel">
         <div class="store-hero-copy">
-          <span class="hero-badge">OFERTAS EXCLUSIVAS</span>
-          <h1>Tecnologia que<br><span>transforma</span></h1>
+          <span class="hero-badge">{{ store.name|upper }}</span>
+          <h1>Feito para você<br><span>se encontrar aqui</span></h1>
           <p>{{ store.description or "Os melhores produtos com os menores preços." }}</p>
           <div class="store-hero-actions">
-            <a class="btn-primary-lf" href="#catalogo">Comprar agora</a>
+            <a class="btn-primary-lf" href="#catalogo">Ver produtos</a>
             {% if store.whatsapp %}
             <a class="btn-outline-lf" href="https://wa.me/{{ store.whatsapp }}" target="_blank" rel="noopener">Falar no WhatsApp</a>
             {% endif %}
           </div>
         </div>
 
-        <div class="store-hero-visual {% if banners|length > 1 %}is-carousel{% endif %}" data-carousel>
-          {% if banners %}
-          <div class="store-hero-slides">
-            {% for banner in banners %}
-            <img class="store-hero-slide {% if loop.first %}is-active{% endif %}" src="{{ banner.image_url }}" alt="Banner {{ loop.index }} de {{ store.name }}">
-            {% endfor %}
-          </div>
-          {% if banners|length > 1 %}
-          <button class="carousel-control carousel-prev" type="button" data-carousel-prev aria-label="Banner anterior"><i class="bi bi-chevron-left"></i></button>
-          <button class="carousel-control carousel-next" type="button" data-carousel-next aria-label="Próximo banner"><i class="bi bi-chevron-right"></i></button>
-          <div class="carousel-dots">
-            {% for banner in banners %}
-            <button class="{% if loop.first %}is-active{% endif %}" type="button" data-carousel-dot="{{ loop.index0 }}" aria-label="Ir para banner {{ loop.index }}"></button>
-            {% endfor %}
-          </div>
-          {% endif %}
-          {% elif featured_product %}
+        <div class="store-hero-visual" data-carousel>
+          {% if featured_product %}
           {% set featured_images = featured_product.images|sort(attribute='position') %}
           {% if featured_images %}
           <div class="store-hero-single">
@@ -125,6 +131,7 @@
           {% endif %}
         </div>
       </section>
+      {% endif %}
 
       <section class="store-catalog-header" id="catalogo">
         <div>
@@ -203,28 +210,7 @@
       {% endif %}
     </main>
 
-    <footer class="store-footer store-footer-offset">
-      <div class="store-shell store-footer-inner">
-        <div>
-          <strong>{{ store.name }}</strong>
-          <small>Todos os direitos reservados © 2026</small>
-        </div>
-        <div class="store-footer-meta">
-          <div class="store-socials">
-            {% if store.whatsapp %}<a href="https://wa.me/{{ store.whatsapp }}" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>{% endif %}
-            {% if store.instagram_url %}<a href="{{ store.instagram_url }}" target="_blank" rel="noopener" aria-label="Instagram"><i class="bi bi-instagram"></i></a>{% endif %}
-            {% if store.facebook_url %}<a href="{{ store.facebook_url }}" target="_blank" rel="noopener" aria-label="Facebook"><i class="bi bi-facebook"></i></a>{% endif %}
-            {% if store.tiktok_url %}<a href="{{ store.tiktok_url }}" target="_blank" rel="noopener" aria-label="TikTok"><i class="bi bi-tiktok"></i></a>{% endif %}
-          </div>
-          <div class="store-payments" aria-label="Formas de pagamento">
-            <span>VISA</span>
-            <span>Mastercard</span>
-            <span>Elo</span>
-            <span>Pix</span>
-          </div>
-        </div>
-      </div>
-    </footer>
+    {% include "storefront/_store_footer.html" with context %}
   </div>
 
   <div class="store-toast" data-store-toast></div>
