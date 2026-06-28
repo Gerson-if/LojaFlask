@@ -1,50 +1,120 @@
-LOJAFÁCIL SOFTWARE LICENSE AGREEMENT (LSLA)
+# LOJAFÁCIL PROPRIETARY SOFTWARE LICENSE AGREEMENT (LSLA)
 
-Copyright (c) 2026 Gerson
-
+**Copyright © 2026 Gerson**
 All Rights Reserved.
 
-1. GRANT OF LICENSE
+---
 
-Subject to compliance with this License Agreement, the author grants the licensee a limited, non-exclusive, non-transferable, and revocable license to use the LojaFácil software for commercial and operational purposes.
+## 1. License Grant
 
-2. RESTRICTIONS
+This software is made available to the public solely for **viewing and internal evaluation purposes**.
 
-The licensee may not:
+Subject to full compliance with this License Agreement, the copyright holder grants a limited, non-exclusive, non-transferable, and revocable license to access and use the software strictly for personal, educational, and non-commercial purposes.
 
-* Copy, distribute, sublicense, rent, lease, or sell the software source code.
-* Modify and redistribute the source code without written authorization.
-* Reverse engineer, decompile, or attempt to extract proprietary components of the software where prohibited by law.
-* Remove or alter copyright notices, trademarks, or author credits.
+No ownership rights are transferred under any circumstances.
 
-3. OWNERSHIP
+---
 
-The LojaFácil software, including its source code, design, structure, databases, trademarks, and documentation, remains the exclusive property of the author.
+## 2. Restrictions
 
-No ownership rights are transferred through this license.
+Without prior written authorization from the copyright holder, it is strictly prohibited to:
 
-4. COMMERCIAL USE
+* Sell, sublicense, rent, lease, or commercialize the software in any form;
+* Use the software to generate direct or indirect financial gain;
+* Offer the software as a service (SaaS), hosted system, API, or cloud solution;
+* Copy, redistribute, or publish the software outside the original repository;
+* Create derivative works or forks intended for public or commercial use;
+* Modify and redistribute the software under a different name or brand;
+* Remove, alter, or conceal copyright notices, authorship, or license terms;
+* Reverse engineer, decompile, or attempt to extract proprietary logic beyond what is permitted by law.
 
-Commercial use of the software is permitted only under authorization granted by the copyright holder.
+Any use not expressly granted under this license is strictly prohibited.
 
-Additional commercial terms may apply depending on the deployment model, hosting model, or service agreements.
+---
 
-5. TERMINATION
+## 3. Intellectual Property
 
-This license automatically terminates if the licensee violates any term of this agreement.
+The LojaFácil software, including but not limited to source code, architecture, design, database structure, business logic, user interface, documentation, and branding, remains the exclusive intellectual property of the copyright holder.
 
-Upon termination, all rights granted under this license immediately cease.
+Nothing in this License shall be interpreted as granting any ownership rights to the licensee.
 
-6. DISCLAIMER OF WARRANTIES
+---
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+## 4. Commercial Use
 
-7. LIMITATION OF LIABILITY
+Any form of commercial use is strictly prohibited unless explicit written permission is granted by the copyright holder.
 
-IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES, LOSS OF PROFITS, LOSS OF DATA, BUSINESS INTERRUPTION, OR OTHER LIABILITY ARISING FROM THE USE OR INABILITY TO USE THE SOFTWARE.
+Commercial use includes, but is not limited to:
 
-8. FUTURE VERSIONS
+* Charging for access to the software;
+* Using the software in paid systems or services;
+* Reselling, white-labeling, or licensing the software;
+* Hosting the system for third parties as a service;
+* Integrating the software into commercial products or platforms.
 
-The author reserves the right to modify, replace, or update this license in future versions of the software.
+Unauthorized commercial use constitutes a violation of intellectual property rights and may result in legal action.
 
-By using LojaFácil, the user acknowledges and agrees to the terms of this License Agreement.
+---
+
+## 5. Public Repository Disclaimer
+
+The availability of this software in public repositories (e.g., GitHub, GitLab, or similar platforms) does NOT grant any rights for reuse, redistribution, or commercial exploitation.
+
+Source code visibility is provided solely for transparency, learning, and evaluation purposes.
+
+Forking, cloning, or copying the repository does not grant any additional rights beyond those explicitly stated in this License.
+
+---
+
+## 6. Termination
+
+Any violation of this License Agreement will result in immediate and automatic termination of all granted rights.
+
+Upon termination, the licensee must immediately cease all use of the software and destroy any copies in their possession.
+
+---
+
+## 7. Disclaimer of Warranty
+
+The software is provided "AS IS", without warranty of any kind, either express or implied, including but not limited to warranties of merchantability, fitness for a particular purpose, or non-infringement.
+
+The copyright holder does not guarantee that the software will be error-free, secure, or suitable for any specific use.
+
+---
+
+## 8. Limitation of Liability
+
+Under no circumstances shall the copyright holder be liable for any damages arising from the use or misuse of the software.
+
+This includes, but is not limited to:
+
+* Loss of profits or revenue;
+* Loss of data;
+* Business interruption;
+* Security failures or breaches;
+* Misconfiguration or improper use;
+* Illegal or unauthorized use by third parties.
+
+The user assumes full responsibility for the use of the software.
+
+---
+
+## 9. No Endorsement
+
+This License does not grant permission to use the name "LojaFácil" or the author's name for promotional, commercial, or endorsement purposes without prior written consent.
+
+---
+
+## 10. Governing Law
+
+This Agreement shall be governed and interpreted in accordance with the laws of the Federative Republic of Brazil.
+
+Any disputes arising from this License shall be resolved in the competent courts of the copyright holder’s jurisdiction.
+
+---
+
+## 11. Acceptance
+
+By accessing, downloading, cloning, or using this software in any form, the user acknowledges that they have read, understood, and agree to be bound by this License Agreement.
+
+All rights not expressly granted herein are reserved by the copyright holder.
