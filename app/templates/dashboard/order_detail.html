@@ -34,6 +34,15 @@
           </a>
         </div>
       </div>
+      {% if order.customer_email %}
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <i class="bi bi-envelope" style="color:#94a3b8;width:18px;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em">E-mail</div>
+          <div>{{ order.customer_email }}</div>
+        </div>
+      </div>
+      {% endif %}
       {% if order.customer_address %}
       <div style="display:flex;gap:.75rem;align-items:flex-start">
         <i class="bi bi-geo-alt" style="color:#94a3b8;width:18px;flex-shrink:0;margin-top:.1rem"></i>

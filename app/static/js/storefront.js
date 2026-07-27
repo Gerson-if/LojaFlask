@@ -24,9 +24,18 @@
     });
   };
 
+  // Handler genérico de incremento/decremento para qualquer ".quantity-control"
+  // fora do carrinho (ex.: seletor de quantidade na página de produto, antes
+  // de adicionar ao carrinho). Dentro do carrinho (`[data-cart-root]`), o
+  // próprio handler do carrinho (mais abaixo) já cuida de tudo — incluindo
+  // aplicar o incremento/decremento — para evitar dois handlers de clique
+  // disputando a mesma quantidade fora de ordem (o handler do carrinho está
+  // em um elemento mais interno e dispararia ANTES deste, na fase de bubble,
+  // lendo o valor antigo e enviando uma atualização sempre um clique atrasada).
   document.addEventListener("click", (event) => {
     const button = event.target.closest("[data-qty-step]");
     if (!button) return;
+    if (button.closest("[data-cart-root]")) return;
     const control = button.closest(".quantity-control");
     const input = control?.querySelector("[data-qty-input]");
     if (!input) return;
@@ -186,6 +195,7 @@
     let pendingTimer = null;
     const sendUpdate = (item, { remove = false } = {}) => {
       const productId = item.dataset.productId;
+      const variantId = item.dataset.variantId || "";
       const input = item.querySelector("[data-qty-input]");
       const quantity = remove ? 0 : Math.max(0, Number(input?.value || 0));
 
@@ -202,7 +212,7 @@
               "Accept": "application/json",
               "X-Requested-With": "XMLHttpRequest",
             },
-            body: new URLSearchParams({ product_id: productId, quantity: String(quantity) }),
+            body: new URLSearchParams({ product_id: productId, variant_id: variantId, quantity: String(quantity) }),
           });
           const payload = await response.json();
           if (!response.ok || !payload.ok) {
@@ -245,7 +255,13 @@
         if (!item) return;
         const input = item.querySelector("[data-qty-input]");
         if (!input) return;
+
+        const step = Number(stepBtn.dataset.qtyStep || 0);
+        const min = Number(input.min || 0);
         const max = Number(input.max || 999999);
+        const current = Number(input.value || min);
+        input.value = Math.max(min, Math.min(max, current + step));
+
         const plusBtn = item.querySelector('[data-qty-step="1"]');
         if (plusBtn) plusBtn.toggleAttribute("disabled", Number(input.value) >= max);
         recomputeRowSubtotal(item);

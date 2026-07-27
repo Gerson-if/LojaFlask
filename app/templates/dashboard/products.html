@@ -14,7 +14,7 @@
   <select class="input-lf" name="category_id">
     <option value="">Todas categorias</option>
     {% for category in categories %}
-    <option value="{{ category.id }}" {% if request.args.get('category_id')|int == category.id %}selected{% endif %}>{{ category.name }}</option>
+    <option value="{{ category.id }}" {% if request.args.get('category_id', '') == category.id|string %}selected{% endif %}>{{ category.name }}</option>
     {% endfor %}
   </select>
   <button class="btn-outline-lf"><i class="bi bi-search"></i> Filtrar</button>
@@ -29,6 +29,7 @@
           <th>Produto</th>
           <th>Categoria</th>
           <th>Preço</th>
+          <th>Margem</th>
           <th>Estoque</th>
           <th>Status</th>
           <th>Atualizado</th>
@@ -45,6 +46,7 @@
               <div>
                 <strong>{{ product.name }}</strong>
                 <small>{{ product.description or "Sem descrição" }}</small>
+                {% if product.has_variants %}<span class="badge-lf badge-info" style="margin-top:.25rem">{{ product.variants|length }} variações</span>{% endif %}
               </div>
             </div>
           </td>
@@ -53,7 +55,17 @@
             {% if product.sale_price %}<small class="old-price">R$ {{ "%.2f"|format(product.price|float) }}</small><br>{% endif %}
             <strong>R$ {{ "%.2f"|format(product.final_price|float) }}</strong>
           </td>
-          <td>{{ product.stock }}</td>
+          <td style="white-space:nowrap">
+            {% if product.profit_margin_percent is not none %}
+            <span style="color:{{ '#15803d' if product.profit_margin_amount > 0 else '#b91c1c' }};font-weight:700">
+              {{ "%.1f"|format(product.profit_margin_percent) }}%
+            </span>
+            <br><small style="color:#94a3b8">R$ {{ "%.2f"|format(product.profit_margin_amount) }}</small>
+            {% else %}
+            <small style="color:#cbd5e1">—</small>
+            {% endif %}
+          </td>
+          <td>{{ product.total_stock }}</td>
           <td><span class="badge-lf {{ 'badge-success' if product.status != 'inativo' else 'badge-danger' }}">{{ product.status }}</span></td>
           <td style="white-space:nowrap;color:#64748b">{{ product.updated_at.strftime("%d/%m/%Y") }}</td>
           <td>
@@ -107,18 +119,34 @@
     </div>
     <div class="grid grid-2">
       <div>
-        <label class="form-label-lf">Preço</label>
-        <input class="input-lf" name="price" type="number" min="0" step="0.01" value="{{ selected_product.price|float }}" required>
+        <label class="form-label-lf">Preço de custo</label>
+        <input class="input-lf" id="field-cost-price" name="cost_price" type="number" min="0" step="0.01"
+               value="{{ selected_product.cost_price|float if selected_product.cost_price is not none else '' }}"
+               placeholder="Opcional">
       </div>
       <div>
-        <label class="form-label-lf">Promo</label>
-        <input class="input-lf" name="sale_price" type="number" min="0" step="0.01" value="{{ selected_product.sale_price|float if selected_product.sale_price else '' }}">
+        <label class="form-label-lf">Preço de venda</label>
+        <input class="input-lf" id="field-price" name="price" type="number" min="0" step="0.01" value="{{ selected_product.price|float }}" required>
       </div>
     </div>
     <div class="grid grid-2">
       <div>
-        <label class="form-label-lf">Estoque</label>
-        <input class="input-lf" name="stock" type="number" min="0" value="{{ selected_product.stock or 0 }}">
+        <label class="form-label-lf">Promo</label>
+        <input class="input-lf" id="field-sale-price" name="sale_price" type="number" min="0" step="0.01" value="{{ selected_product.sale_price|float if selected_product.sale_price else '' }}">
+      </div>
+      <div style="display:flex;align-items:flex-end">
+        <div id="margin-indicator" style="font-size:.82rem;color:#64748b;padding-bottom:.6rem">
+          {% if selected_product and selected_product.cost_price is not none %}
+          Margem: <strong style="color:#15803d">R$ {{ "%.2f"|format(selected_product.profit_margin_amount) }}
+          ({{ "%.1f"|format(selected_product.profit_margin_percent) }}%)</strong>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-2">
+      <div>
+        <label class="form-label-lf">Estoque {% if selected_product.has_variants %}<small style="color:#94a3b8">(controlado pelas variações abaixo)</small>{% endif %}</label>
+        <input class="input-lf" name="stock" type="number" min="0" value="{{ selected_product.stock or 0 }}" {% if selected_product.has_variants %}disabled{% endif %}>
       </div>
       <div>
         <label class="form-label-lf">Status</label>
@@ -129,6 +157,43 @@
         </select>
       </div>
     </div>
+
+    <div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+        <label class="form-label-lf" style="margin:0">Variações (tamanho / cor)</label>
+        <button type="button" class="btn-outline-lf" id="add-variant-row" style="font-size:.78rem;padding:.35rem .7rem">
+          <i class="bi bi-plus-lg"></i> Adicionar variação
+        </button>
+      </div>
+      <small style="color:#94a3b8;display:block;margin-bottom:.5rem">
+        Cadastre uma linha para cada combinação que você vende (ex.: P/Azul, M/Azul, G/Vermelho).
+        Quando há ao menos uma variação, o estoque do produto passa a ser controlado por elas.
+      </small>
+      <div id="variant-rows" class="stack-sm">
+        {% for variant in selected_product.variants %}
+        <div class="variant-row" data-variant-row style="display:grid;grid-template-columns:1fr 1fr 90px 110px 36px;gap:.5rem;align-items:center">
+          <input type="hidden" name="variant_id[]" value="{{ variant.id }}">
+          <input class="input-lf" name="variant_size[]" placeholder="Tamanho (ex.: M)" value="{{ variant.size or '' }}">
+          <input class="input-lf" name="variant_color[]" placeholder="Cor (ex.: Azul)" value="{{ variant.color or '' }}">
+          <input class="input-lf" name="variant_stock[]" type="number" min="0" placeholder="Estoque" value="{{ variant.stock }}">
+          <input class="input-lf" name="variant_price[]" type="number" min="0" step="0.01" placeholder="Preço (opc.)" value="{{ variant.price|float if variant.price is not none else '' }}">
+          <button type="button" class="icon-btn" data-remove-variant-row aria-label="Remover variação"><i class="bi bi-trash3"></i></button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <template id="variant-row-template">
+      <div class="variant-row" data-variant-row style="display:grid;grid-template-columns:1fr 1fr 90px 110px 36px;gap:.5rem;align-items:center">
+        <input type="hidden" name="variant_id[]" value="">
+        <input class="input-lf" name="variant_size[]" placeholder="Tamanho (ex.: M)">
+        <input class="input-lf" name="variant_color[]" placeholder="Cor (ex.: Azul)">
+        <input class="input-lf" name="variant_stock[]" type="number" min="0" placeholder="Estoque" value="0">
+        <input class="input-lf" name="variant_price[]" type="number" min="0" step="0.01" placeholder="Preço (opc.)">
+        <button type="button" class="icon-btn" data-remove-variant-row aria-label="Remover variação"><i class="bi bi-trash3"></i></button>
+      </div>
+    </template>
+
     <div>
       <label class="form-label-lf">Descrição</label>
       <textarea class="input-lf" name="description" rows="4">{{ selected_product.description or "" }}</textarea>
@@ -152,6 +217,76 @@
     </div>
   </form>
   <form id="delete-product-{{ selected_product.id }}" method="post" action="{{ url_for('dashboard.product_delete', product_id=selected_product.id) }}" onsubmit="return confirm('Excluir este produto e suas imagens?')"></form>
+  <script>
+    (function () {
+      var costInput = document.getElementById("field-cost-price");
+      var priceInput = document.getElementById("field-price");
+      var saleInput = document.getElementById("field-sale-price");
+      var indicator = document.getElementById("margin-indicator");
+      if (!costInput || !priceInput || !indicator) return;
+
+      function formatBRL(value) {
+        return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+
+      function recalc() {
+        var cost = parseFloat(costInput.value.replace(",", "."));
+        var sale = parseFloat(saleInput.value.replace(",", "."));
+        var price = parseFloat(priceInput.value.replace(",", "."));
+        var finalPrice = !isNaN(sale) && sale > 0 ? sale : price;
+
+        if (isNaN(cost) || costInput.value.trim() === "" || isNaN(finalPrice) || finalPrice <= 0) {
+          indicator.innerHTML = "";
+          return;
+        }
+        var marginAmount = finalPrice - cost;
+        var marginPercent = (marginAmount / finalPrice) * 100;
+        var color = marginAmount > 0 ? "#15803d" : "#b91c1c";
+        indicator.innerHTML =
+          "Margem: <strong style=\"color:" + color + "\">R$ " + formatBRL(marginAmount) +
+          " (" + marginPercent.toFixed(1) + "%)</strong>";
+      }
+
+      [costInput, priceInput, saleInput].forEach(function (input) {
+        input.addEventListener("input", recalc);
+      });
+      recalc();
+
+      // --- Variações (tamanho/cor) ---
+      var rowsContainer = document.getElementById("variant-rows");
+      var addBtn = document.getElementById("add-variant-row");
+      var template = document.getElementById("variant-row-template");
+      var stockInput = document.querySelector('input[name="stock"]');
+
+      function updateStockFieldState() {
+        if (!stockInput) return;
+        var hasRows = rowsContainer.querySelectorAll("[data-variant-row]").length > 0;
+        stockInput.disabled = hasRows;
+      }
+
+      function bindRemove(row) {
+        var btn = row.querySelector("[data-remove-variant-row]");
+        if (!btn) return;
+        btn.addEventListener("click", function () {
+          row.remove();
+          updateStockFieldState();
+        });
+      }
+
+      rowsContainer.querySelectorAll("[data-variant-row]").forEach(bindRemove);
+
+      if (addBtn && template) {
+        addBtn.addEventListener("click", function () {
+          var clone = template.content.cloneNode(true);
+          var row = clone.querySelector("[data-variant-row]");
+          rowsContainer.appendChild(row);
+          bindRemove(row);
+          updateStockFieldState();
+        });
+      }
+      updateStockFieldState();
+    })();
+  </script>
 </aside>
 {% endif %}
 {% endblock %}

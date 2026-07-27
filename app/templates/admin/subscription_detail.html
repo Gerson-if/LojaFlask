@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block page_name %}Assinatura — {{ user.name }}{% endblock %}
+{% block content %}
+
+<div class="page-heading">
+  <div>
+    <div class="page-title">Assinatura de {{ user.name }}</div>
+    <div class="page-subtitle">{{ store.name }} · /{{ store.slug }} · {{ user.email }}</div>
+  </div>
+  <a href="{{ url_for('dashboard.admin_users') }}" class="btn-outline-lf"><i class="bi bi-arrow-left"></i> Voltar para lojistas</a>
+</div>
+
+{% set badge_map = {
+  "trial": ("badge-warning", "bi-clock-history", "Período de teste"),
+  "paid": ("badge-success", "bi-patch-check-fill", "Assinatura ativa"),
+  "expired": ("badge-danger", "bi-exclamation-triangle-fill", "Acesso expirado"),
+  "none": ("badge-danger", "bi-x-circle-fill", "Sem assinatura"),
+} %}
+{% set badge_class, badge_icon, status_label = badge_map.get(status.mode, badge_map["none"]) %}
+
+<div class="grid grid-2 dashboard-grid">
+
+  <section class="card-lf stack-md">
+    <div class="section-heading-row">
+      <h3 style="margin:0;font-size:1rem;font-weight:800">Status atual</h3>
+      <span class="badge-lf {{ badge_class }}"><i class="bi {{ badge_icon }}"></i>&nbsp; {{ status_label }}</span>
+    </div>
+
+    <div style="display:grid;gap:.65rem">
+      {% if status.trial_ends_at %}
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <i class="bi bi-clock-history" style="color:#94a3b8;width:18px;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Fim do período de teste</div>
+          <div style="font-weight:700">{{ status.trial_ends_at.strftime("%d/%m/%Y") }}</div>
+        </div>
+      </div>
+      {% endif %}
+      {% if status.paid_until %}
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <i class="bi bi-calendar-check" style="color:#94a3b8;width:18px;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Vencimento da assinatura paga</div>
+          <div style="font-weight:700">{{ status.paid_until.strftime("%d/%m/%Y") }}</div>
+        </div>
+      </div>
+      {% endif %}
+      {% if status.days_left is not none %}
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <i class="bi bi-hourglass-split" style="color:#94a3b8;width:18px;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Dias restantes</div>
+          <div style="font-weight:700">{{ status.days_left }} dia{{ 's' if status.days_left != 1 }}</div>
+        </div>
+      </div>
+      {% endif %}
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <i class="bi bi-cash-coin" style="color:#94a3b8;width:18px;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Total já pago por esta loja</div>
+          <div style="font-weight:700">R$ {{ "%.2f"|format(total_paid) }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card-lf stack-md">
+    <h3 style="margin:0;font-size:1rem;font-weight:800">Registrar pagamento / renovar</h3>
+    <form method="post" action="{{ url_for('dashboard.admin_subscription_manage', user_id=user.id) }}" class="stack-md">
+      <div>
+        <label class="form-label-lf">Período</label>
+        <select class="input-lf" name="action" required>
+          <option value="renew_1">+1 mês</option>
+          <option value="renew_3">+3 meses</option>
+          <option value="renew_12">+12 meses</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label-lf">Valor cobrado (opcional)</label>
+        <input class="input-lf" name="amount" placeholder="Padrão: R$ {{ price }} × nº de meses" inputmode="decimal">
+      </div>
+      <div>
+        <label class="form-label-lf">Observação (opcional)</label>
+        <input class="input-lf" name="note" placeholder="Ex.: PIX recebido, referência #1234">
+      </div>
+      <button type="submit" class="btn-primary-lf full-btn" style="justify-content:center;display:flex">
+        <i class="bi bi-check2-circle"></i>&nbsp; Confirmar renovação
+      </button>
+    </form>
+
+    <div style="border-top:1px solid #f1f5f9;padding-top:1rem">
+      <form method="post" action="{{ url_for('dashboard.admin_subscription_manage', user_id=user.id) }}" class="stack-md">
+        <input type="hidden" name="action" value="set_date">
+        <div>
+          <label class="form-label-lf">Ou defina a data de vencimento diretamente</label>
+          <input class="input-lf" type="date" name="paid_until"
+                 value="{{ status.paid_until.strftime('%Y-%m-%d') if status.paid_until else '' }}" required>
+          <small style="color:#94a3b8;font-size:.78rem;display:block;margin-top:.35rem">
+            Use para corrigir uma data já registrada — por exemplo, se uma renovação foi
+            lançada com o número errado de meses ou o lojista pagou um período fora do padrão.
+          </small>
+        </div>
+        <div>
+          <label class="form-label-lf">Observação (opcional)</label>
+          <input class="input-lf" name="note" placeholder="Ex.: correção de data, acordo especial">
+        </div>
+        <button type="submit" class="btn-outline-lf full-btn" style="justify-content:center;display:flex">
+          <i class="bi bi-calendar2-week"></i>&nbsp; Definir esta data de vencimento
+        </button>
+      </form>
+    </div>
+
+    <form method="post" action="{{ url_for('dashboard.admin_subscription_manage', user_id=user.id) }}"
+          onsubmit="return confirm('Suspender a assinatura de {{ user.name }} agora?')">
+      <input type="hidden" name="action" value="suspend">
+      <button type="submit" class="btn-danger-lf full-btn" style="justify-content:center;display:flex">
+        <i class="bi bi-x-circle"></i>&nbsp; Suspender assinatura agora
+      </button>
+    </form>
+  </section>
+
+</div>
+
+<div class="spacer-md"></div>
+
+<section class="card-lf table-card">
+  <div class="section-heading-row">
+    <h3 style="margin:0;font-size:1rem;font-weight:800">Histórico completo</h3>
+  </div>
+  {% if payments %}
+  <div class="table-scroll">
+    <table class="table-lf">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Ação</th>
+          <th>Período</th>
+          <th>Valor</th>
+          <th>Registrado por</th>
+          <th>Observação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for payment in payments %}
+        <tr>
+          <td style="white-space:nowrap;color:#64748b;font-size:.875rem">{{ payment.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+          <td>
+            {% if payment.action == "renew" %}
+            <span class="badge-lf badge-success"><i class="bi bi-arrow-repeat"></i>&nbsp; Renovação ({{ payment.months }} mês{{ "es" if payment.months != 1 }})</span>
+            {% else %}
+            <span class="badge-lf badge-danger"><i class="bi bi-x-circle"></i>&nbsp; Suspensão</span>
+            {% endif %}
+          </td>
+          <td style="white-space:nowrap;font-size:.875rem;color:#64748b">
+            {% if payment.period_start and payment.period_end %}
+              {{ payment.period_start.strftime("%d/%m/%Y") }} – {{ payment.period_end.strftime("%d/%m/%Y") }}
+            {% else %}-{% endif %}
+          </td>
+          <td style="white-space:nowrap;font-weight:700">
+            {% if payment.amount %}R$ {{ "%.2f"|format(payment.amount) }}{% else %}-{% endif %}
+          </td>
+          <td style="font-size:.85rem;color:#64748b">{{ payment.registered_by.name if payment.registered_by else "-" }}</td>
+          <td style="color:#64748b;font-size:.85rem">{{ payment.note or "-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-receipt" style="font-size:2rem;display:block;margin-bottom:.5rem;color:#cbd5e1"></i>
+    Nenhum pagamento registrado ainda para esta loja.
+  </div>
+  {% endif %}
+</section>
+
+{% endblock %}

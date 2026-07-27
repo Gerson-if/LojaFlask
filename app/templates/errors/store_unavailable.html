@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ store.name if store else "Loja" }} — Indisponível no momento</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  {% if store and store.logo_url %}<link rel="icon" href="{{ store.logo_url }}">{% endif %}
+  {% if store %}<style>:root{--primary:{{ store.primary_color }};--accent:{{ store.secondary_color }}}</style>{% endif %}
+</head>
+<body class="storefront-body">
+  <main class="success-page store-shell">
+    <section class="card-lf success-card">
+      {% if store and store.logo_url %}
+      <img src="{{ store.logo_url }}" alt="{{ store.name }}" style="width:64px;height:64px;border-radius:50%;object-fit:cover;margin:0 auto 1rem">
+      {% else %}
+      <div class="success-icon"><i class="bi bi-shop"></i></div>
+      {% endif %}
+
+      <div class="page-title">{{ store.name if store else "Esta loja" }} está indisponível no momento</div>
+      <p>Pedimos desculpas pelo transtorno. Volte a visitar em breve — em geral isso se resolve rapidinho.</p>
+    </section>
+  </main>
+</body>
+</html>

@@ -5,7 +5,7 @@
 <div class="page-heading">
   <div>
     <div class="page-title">Lojistas</div>
-    <div class="page-subtitle">Gerencie contas, acesso e remoção completa de lojas.</div>
+    <div class="page-subtitle">Gerencie contas, assinaturas e acesso às lojas.</div>
   </div>
   <form method="get" class="actions">
     <input class="input-lf" name="q" value="{{ request.args.get('q','') }}" placeholder="Buscar por nome ou e-mail..." style="min-width:240px">
@@ -21,22 +21,64 @@
         <tr>
           <th>Lojista</th>
           <th>Loja</th>
-          <th>Status</th>
+          <th>Conta</th>
+          <th>Assinatura</th>
           <th>Cadastro</th>
           <th>Ações</th>
         </tr>
       </thead>
       <tbody>
         {% for user in users %}
+        {% set store = user.store %}
+        {% set now = now() %}
+        {# Calcular status da assinatura #}
+        {% if store %}
+          {% if store.subscription_active %}
+            {% if store.paid_until %}
+              {% set paid_until = store.paid_until %}
+              {% if paid_until > now %}
+                {% set sub_mode = "paid" %}
+                {% set sub_label = "Pago até " + paid_until.strftime("%d/%m/%Y") %}
+                {% set sub_badge = "badge-success" %}
+              {% else %}
+                {% set sub_mode = "expired" %}
+                {% set sub_label = "Vencido" %}
+                {% set sub_badge = "badge-danger" %}
+              {% endif %}
+            {% else %}
+              {% set sub_mode = "paid" %}
+              {% set sub_label = "Ativo (sem vencimento)" %}
+              {% set sub_badge = "badge-success" %}
+            {% endif %}
+          {% elif store.trial_ends_at %}
+            {% if store.trial_ends_at > now %}
+              {% set sub_mode = "trial" %}
+              {% set sub_label = "Trial até " + store.trial_ends_at.strftime("%d/%m/%Y") %}
+              {% set sub_badge = "badge-warning" %}
+            {% else %}
+              {% set sub_mode = "expired" %}
+              {% set sub_label = "Trial expirado" %}
+              {% set sub_badge = "badge-danger" %}
+            {% endif %}
+          {% else %}
+            {% set sub_mode = "none" %}
+            {% set sub_label = "Sem acesso" %}
+            {% set sub_badge = "badge-danger" %}
+          {% endif %}
+        {% else %}
+          {% set sub_mode = "none" %}
+          {% set sub_label = "Sem loja" %}
+          {% set sub_badge = "badge-danger" %}
+        {% endif %}
         <tr>
           <td>
             <div style="font-weight:700">{{ user.name }}</div>
             <div style="font-size:.75rem;color:#94a3b8">{{ user.email }}</div>
           </td>
           <td>
-            {% if user.store %}
-            <div style="font-weight:600">{{ user.store.name }}</div>
-            <div style="font-size:.75rem;color:#94a3b8">/{{ user.store.slug }}</div>
+            {% if store %}
+            <div style="font-weight:600">{{ store.name }}</div>
+            <div style="font-size:.75rem;color:#94a3b8">/{{ store.slug }}</div>
             {% else %}
             <span style="color:#cbd5e1">-</span>
             {% endif %}
@@ -46,24 +88,80 @@
               {{ "Ativa" if user.active else "Suspensa" }}
             </span>
           </td>
+          <td>
+            <span class="badge-lf {{ sub_badge }}" title="{{ sub_label }}">
+              {{ sub_label }}
+            </span>
+          </td>
           <td style="white-space:nowrap;color:#64748b;font-size:.875rem">
             {{ user.created_at.strftime("%d/%m/%Y") }}
           </td>
           <td>
-            <div class="actions admin-actions">
+            <div class="actions admin-actions" style="flex-wrap:wrap;gap:.35rem">
+
+              {# Suspender/reativar conta #}
               <form method="post" action="{{ url_for('dashboard.admin_user_toggle', user_id=user.id) }}">
-                <button class="btn-sm-lf {{ 'btn-warning-lf' if user.active else 'btn-success-lf' }}">
+                <button class="btn-sm-lf {{ 'btn-warning-lf' if user.active else 'btn-success-lf' }}" title="{{ 'Suspender conta' if user.active else 'Reativar conta' }}">
                   <i class="bi {{ 'bi-pause-circle' if user.active else 'bi-play-circle' }}"></i>
                   {{ "Suspender" if user.active else "Reativar" }}
                 </button>
               </form>
+
+              {% if store %}
+              {# Painel de assinatura via dropdown #}
+              <div style="position:relative;display:inline-block" class="subscription-menu-wrap">
+                <button type="button" class="btn-sm-lf btn-outline-lf subscription-menu-btn"
+                        data-target="sub-menu-{{ user.id }}"
+                        title="Gerenciar assinatura">
+                  <i class="bi bi-calendar-check"></i> Assinatura
+                </button>
+                <div id="sub-menu-{{ user.id }}" class="subscription-dropdown" style="display:none;position:absolute;right:0;top:calc(100% + 4px);background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:.5rem;z-index:50;min-width:200px;box-shadow:0 4px 16px rgba(0,0,0,.1)">
+                  <a href="{{ url_for('dashboard.admin_subscription_detail', user_id=user.id) }}" class="sub-dropdown-item" style="text-decoration:none">
+                    <i class="bi bi-clock-history"></i> Ver histórico completo
+                  </a>
+                  <div style="border-top:1px solid #f1f5f9;margin:.35rem 0"></div>
+                  <div style="font-size:.72rem;font-weight:700;color:#94a3b8;padding:.25rem .5rem .4rem">RENOVAR</div>
+                  <form method="post" action="{{ url_for('dashboard.admin_subscription_manage', user_id=user.id) }}">
+                    <input type="hidden" name="action" value="renew_1">
+                    <button type="submit" class="sub-dropdown-item">
+                      <i class="bi bi-plus-circle"></i> +1 mês
+                    </button>
+                  </form>
+                  <form method="post" action="{{ url_for('dashboard.admin_subscription_manage', user_id=user.id) }}">
+                    <input type="hidden" name="action" value="renew_3">
+                    <button type="submit" class="sub-dropdown-item">
+                      <i class="bi bi-plus-circle"></i> +3 meses
+                    </button>
+                  </form>
+                  <form method="post" action="{{ url_for('dashboard.admin_subscription_manage', user_id=user.id) }}">
+                    <input type="hidden" name="action" value="renew_12">
+                    <button type="submit" class="sub-dropdown-item">
+                      <i class="bi bi-plus-circle"></i> +12 meses
+                    </button>
+                  </form>
+                  <div style="border-top:1px solid #f1f5f9;margin:.35rem 0"></div>
+                  <form method="post" action="{{ url_for('dashboard.admin_subscription_manage', user_id=user.id) }}"
+                        onsubmit="return confirm('Suspender assinatura de {{ user.name }}?')">
+                    <input type="hidden" name="action" value="suspend">
+                    <button type="submit" class="sub-dropdown-item" style="color:#ef4444">
+                      <i class="bi bi-x-circle"></i> Suspender agora
+                    </button>
+                  </form>
+                </div>
+              </div>
+              {% endif %}
+
+              {# Alterar senha #}
               <form method="post" action="{{ url_for('dashboard.admin_user_password', user_id=user.id) }}" class="actions password-reset-form">
-                <input class="input-lf btn-sm-lf" name="password" placeholder="Nova senha">
+                <input class="input-lf btn-sm-lf" name="password" placeholder="Nova senha" style="max-width:130px">
                 <button class="btn-outline-lf btn-sm-lf" title="Alterar senha"><i class="bi bi-key"></i></button>
               </form>
+
+              {# Excluir #}
               <form method="post" action="{{ url_for('dashboard.admin_user_delete', user_id=user.id) }}" onsubmit="return confirm('Excluir este lojista, a loja e todos os arquivos enviados?')">
                 <button class="btn-danger-lf btn-sm-lf"><i class="bi bi-trash"></i> Excluir</button>
               </form>
+
             </div>
           </td>
         </tr>
@@ -78,5 +176,40 @@
   </div>
   {% endif %}
 </section>
+
+<style>
+.sub-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  width: 100%;
+  padding: .38rem .6rem;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  font-size: .82rem;
+  color: #334155;
+  cursor: pointer;
+  text-align: left;
+}
+.sub-dropdown-item:hover { background: #f8fafc; }
+</style>
+
+<script>
+// Toggle dos dropdowns de assinatura
+document.querySelectorAll('.subscription-menu-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const target = document.getElementById(btn.dataset.target);
+    const isOpen = target.style.display !== 'none';
+    // Fecha todos
+    document.querySelectorAll('.subscription-dropdown').forEach(d => d.style.display = 'none');
+    if (!isOpen) target.style.display = 'block';
+  });
+});
+document.addEventListener('click', () => {
+  document.querySelectorAll('.subscription-dropdown').forEach(d => d.style.display = 'none');
+});
+</script>
 
 {% endblock %}

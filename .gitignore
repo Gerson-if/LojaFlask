@@ -1,9 +1,31 @@
+# Ambiente e segredos
+.env
+.env.*
+!.env.example
+!deploy.env.example
+
+# Python
 __pycache__/
 *.pyc
-.env
+*.pyo
 .venv/
+venv/
+
+# Banco de dados local
 instance/
-migration_empty.db
-upgrade_test.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploads enviados pelos lojistas (não fazem parte do código-fonte)
 app/static/uploads/*
 !app/static/uploads/.gitkeep
+
+# Logs
+*.log
+
+# Editores / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block page_name %}Financeiro{% endblock %}
+{% block content %}
+
+<div class="page-heading">
+  <div>
+    <div class="page-title">Financeiro</div>
+    <div class="page-subtitle">Margem de lucro com base no preço de custo e venda dos seus produtos</div>
+  </div>
+  <form method="get" class="actions">
+    <select class="input-lf" name="period" onchange="this.form.submit()">
+      <option value="7" {% if period_days == 7 %}selected{% endif %}>Últimos 7 dias</option>
+      <option value="30" {% if period_days == 30 %}selected{% endif %}>Últimos 30 dias</option>
+      <option value="90" {% if period_days == 90 %}selected{% endif %}>Últimos 90 dias</option>
+      <option value="365" {% if period_days == 365 %}selected{% endif %}>Últimos 12 meses</option>
+    </select>
+  </form>
+</div>
+
+{% if products_without_cost %}
+<div class="alert-banner" style="background:#fef3c7;border:1px solid #fde68a;color:#92400e;padding:.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.85rem;display:flex;align-items:center;gap:.6rem">
+  <i class="bi bi-info-circle"></i>
+  <span>
+    {{ products_without_cost }} produto{{ "s" if products_without_cost != 1 }} sem preço de custo cadastrado —
+    a margem desses itens não entra nos cálculos abaixo.
+    <a href="{{ url_for('dashboard.products') }}" style="font-weight:700;text-decoration:underline">Cadastrar custo</a>
+  </span>
+</div>
+{% endif %}
+
+<div class="grid grid-4">
+  <div class="stat-card">
+    <div class="stat-label">Receita no período</div>
+    <div class="stat-value" style="font-size:1.5rem">R$ {{ "%.2f"|format(revenue) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Custo no período</div>
+    <div class="stat-value" style="font-size:1.5rem">R$ {{ "%.2f"|format(cost_total) }}</div>
+  </div>
+  <div class="stat-card" style="--stat-accent:{{ '#22c55e' if profit_total >= 0 else '#ef4444' }}">
+    <div class="stat-label">Lucro no período</div>
+    <div class="stat-value" style="font-size:1.5rem;color:{{ '#15803d' if profit_total >= 0 else '#b91c1c' }}">R$ {{ "%.2f"|format(profit_total) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Margem média</div>
+    <div class="stat-value" style="font-size:1.5rem">
+      {% if margin_percent is not none %}{{ "%.1f"|format(margin_percent) }}%{% else %}—{% endif %}
+    </div>
+  </div>
+</div>
+
+{% if items_missing_cost %}
+<p style="font-size:.8rem;color:#94a3b8;margin:.75rem 0 0">
+  {{ items_missing_cost }} item{{ "s" if items_missing_cost != 1 }} vendido{{ "s" if items_missing_cost != 1 }} no período
+  sem custo cadastrado (produto excluído ou sem preço de custo definido) — não entraram no cálculo de custo/lucro acima.
+</p>
+{% endif %}
+
+<div class="spacer-md"></div>
+
+<section class="card-lf table-card">
+  <div class="section-heading-row">
+    <h3>Produtos mais vendidos no período</h3>
+    <span style="font-size:.8rem;color:#94a3b8">{{ orders_count }} pedido{{ "s" if orders_count != 1 }} considerado{{ "s" if orders_count != 1 }}</span>
+  </div>
+  {% if ranking %}
+  <div class="table-scroll">
+    <table class="table-lf">
+      <thead>
+        <tr>
+          <th>Produto</th>
+          <th>Qtd. vendida</th>
+          <th>Receita</th>
+          <th>Custo</th>
+          <th>Lucro</th>
+          <th>Margem</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in ranking %}
+        <tr>
+          <td><strong>{{ row.name }}</strong></td>
+          <td>{{ row.qty }}</td>
+          <td style="white-space:nowrap">R$ {{ "%.2f"|format(row.revenue) }}</td>
+          <td style="white-space:nowrap">
+            {% if row.has_cost %}R$ {{ "%.2f"|format(row.cost) }}{% else %}<small style="color:#cbd5e1">parcial</small>{% endif %}
+          </td>
+          <td style="white-space:nowrap">
+            {% if row.profit is not none %}
+            <span style="color:{{ '#15803d' if row.profit >= 0 else '#b91c1c' }};font-weight:700">R$ {{ "%.2f"|format(row.profit) }}</span>
+            {% else %}<small style="color:#cbd5e1">—</small>{% endif %}
+          </td>
+          <td style="white-space:nowrap">
+            {% if row.margin is not none %}{{ "%.1f"|format(row.margin) }}%{% else %}<small style="color:#cbd5e1">—</small>{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-graph-up" style="font-size:2rem;display:block;margin-bottom:.5rem;color:#cbd5e1"></i>
+    Nenhuma venda registrada neste período.
+  </div>
+  {% endif %}
+</section>
+
+{% endblock %}

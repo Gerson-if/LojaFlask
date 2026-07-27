@@ -42,13 +42,35 @@ def create_app(config_name=None):
     def inject_globals():
         return {"now": datetime.utcnow}
 
+    # ── Subscription context processor ────────────────────────────────────────
+    from .subscription import subscription_context_processor
+    app.context_processor(subscription_context_processor)
+    # ─────────────────────────────────────────────────────────────────────────
+
     from .routes.auth import auth_bp
     from .routes.dashboard import dashboard_bp
     from .routes.storefront import storefront_bp
+    from .subscription import subscription_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(storefront_bp)
+    app.register_blueprint(subscription_bp)
+
+    # ── Landing page — raiz do site ───────────────────────────────────────────
+    # IMPORTANTE: o blueprint do dashboard usa url_prefix="/painel", então não
+    # existe mais conflito de URL "/" entre a landing e o painel logado.
+    # Usuário autenticado que acessa "/" vai pro painel (dashboard.index).
+    # Usuário não autenticado vê a landing page.
+    from flask import redirect, url_for
+    from flask_login import current_user
+
+    @app.get("/")
+    def landing():
+        if current_user.is_authenticated:
+            return redirect(url_for("dashboard.index"))
+        return render_template("landing.html")
+    # ─────────────────────────────────────────────────────────────────────────
 
     @app.get("/health")
     def health():
@@ -82,6 +104,22 @@ def register_error_handlers(app):
                 message="A rota acessada não existe ou foi removida.",
             ),
             404,
+        )
+
+    @app.errorhandler(503)
+    def store_unavailable(error):
+        from .models import Store
+
+        # `error.description` carrega a `Store` quando o 503 vem do bloqueio
+        # de inadimplência (ver subscription.require_active_storefront) —
+        # assim a página usa a identidade visual daquela loja (logo, cores)
+        # em vez de um erro genérico. Em qualquer outro 503 (ex.: falha
+        # inesperada do servidor), `description` não é uma Store e a página
+        # cai de volta no visual neutro padrão.
+        store = error.description if isinstance(error.description, Store) else None
+        return (
+            render_template("errors/store_unavailable.html", store=store),
+            503,
         )
 
     @app.errorhandler(RequestEntityTooLarge)

@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  {% if store.logo_url %}<link rel="icon" href="{{ store.logo_url }}">{% endif %}
   <style>:root{--primary:{{ store.primary_color }};--accent:{{ store.secondary_color }}}</style>
 </head>
 <body class="storefront-body">
@@ -117,7 +118,113 @@
             <strong>R$ {{ "%.2f"|format(product.final_price) }}</strong>
           </div>
 
-          {% if product.stock > 0 %}
+          {% if product.has_variants %}
+          {% set sizes = product.variants|map(attribute='size')|select|unique|list %}
+          {% set colors = product.variants|map(attribute='color')|select|unique|list %}
+          {% set any_in_stock = product.variants|selectattr('stock', 'gt', 0)|list %}
+          {% if any_in_stock %}
+          <form class="purchase-panel js-add-to-cart" method="post" action="{{ url_for('storefront.cart_add', slug=store.slug, product_id=product.id) }}"
+                data-variant-picker>
+            {% if sizes %}
+            <div>
+              <label class="form-label-lf">Tamanho</label>
+              <div class="variant-options" data-variant-group="size">
+                {% for size in sizes %}
+                <button type="button" class="variant-pill" data-variant-value="{{ size }}">{{ size }}</button>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+            {% if colors %}
+            <div>
+              <label class="form-label-lf">Cor</label>
+              <div class="variant-options" data-variant-group="color">
+                {% for color in colors %}
+                <button type="button" class="variant-pill" data-variant-value="{{ color }}">{{ color }}</button>
+                {% endfor %}
+              </div>
+            </div>
+            {% endif %}
+            <input type="hidden" name="variant_id" data-variant-id-input value="">
+            <div>
+              <label class="form-label-lf">Quantidade</label>
+              <div class="quantity-control">
+                <button type="button" data-qty-step="-1" aria-label="Diminuir quantidade"><i class="bi bi-dash"></i></button>
+                <input name="quantity" data-qty-input type="number" min="1" max="1" value="1">
+                <button type="button" data-qty-step="1" aria-label="Aumentar quantidade"><i class="bi bi-plus"></i></button>
+              </div>
+              <small class="stock-note" data-variant-stock-note>Escolha as opções para ver o estoque</small>
+            </div>
+            <button class="btn-primary-lf product-detail-add" type="submit" data-variant-submit disabled>
+              <i class="bi bi-cart-plus"></i> Adicionar ao carrinho
+            </button>
+          </form>
+          <script>
+            (function () {
+              var variantInfo = {
+                {% for v in product.variants %}
+                "{{ v.id }}": {size: {{ (v.size or "")|tojson }}, color: {{ (v.color or "")|tojson }}, stock: {{ v.stock }}, price: {{ v.final_price }}},
+                {% endfor %}
+              };
+              var form = document.querySelector('[data-variant-picker]');
+              if (!form) return;
+              var selected = {size: null, color: null};
+              var idInput = form.querySelector('[data-variant-id-input]');
+              var qtyInput = form.querySelector('[data-qty-input]');
+              var stockNote = form.querySelector('[data-variant-stock-note]');
+              var submitBtn = form.querySelector('[data-variant-submit]');
+
+              function findVariantId() {
+                for (var id in variantInfo) {
+                  var v = variantInfo[id];
+                  var sizeOk = !v.size || v.size === selected.size;
+                  var colorOk = !v.color || v.color === selected.color;
+                  var groupsSatisfied = (!form.querySelector('[data-variant-group="size"]') || selected.size) &&
+                                        (!form.querySelector('[data-variant-group="color"]') || selected.color);
+                  if (sizeOk && colorOk && groupsSatisfied) return id;
+                }
+                return null;
+              }
+
+              function refresh() {
+                var variantId = findVariantId();
+                if (!variantId) {
+                  idInput.value = "";
+                  stockNote.textContent = "Escolha as opções para ver o estoque";
+                  submitBtn.disabled = true;
+                  return;
+                }
+                var info = variantInfo[variantId];
+                idInput.value = variantId;
+                qtyInput.max = info.stock;
+                qtyInput.value = info.stock > 0 ? 1 : 0;
+                if (info.stock > 0) {
+                  stockNote.textContent = info.stock + " em estoque";
+                  submitBtn.disabled = false;
+                } else {
+                  stockNote.textContent = "Sem estoque para esta combinação";
+                  submitBtn.disabled = true;
+                }
+              }
+
+              form.querySelectorAll("[data-variant-group]").forEach(function (group) {
+                var groupName = group.dataset.variantGroup;
+                group.querySelectorAll("[data-variant-value]").forEach(function (btn) {
+                  btn.addEventListener("click", function () {
+                    group.querySelectorAll(".variant-pill").forEach(function (b) { b.classList.remove("is-selected"); });
+                    btn.classList.add("is-selected");
+                    selected[groupName] = btn.dataset.variantValue;
+                    refresh();
+                  });
+                });
+              });
+              refresh();
+            })();
+          </script>
+          {% else %}
+          <div class="stock-empty large">Produto sem estoque</div>
+          {% endif %}
+          {% elif product.stock > 0 %}
           <form class="purchase-panel js-add-to-cart" method="post" action="{{ url_for('storefront.cart_add', slug=store.slug, product_id=product.id) }}">
             <div>
               <label class="form-label-lf">Quantidade</label>

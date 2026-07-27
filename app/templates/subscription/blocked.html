@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Assinatura necessária – LojaFácil{% endblock %}
+{% block page_name %}Assinatura{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:center;padding:1.5rem 0">
+  <div class="card-lf" style="text-align:center;max-width:480px;width:100%">
+    <div style="font-size:2.8rem;margin-bottom:.5rem">⏰</div>
+    <div class="auth-logo" style="justify-content:center;display:flex;align-items:center;gap:.4rem"><i class="bi bi-shop"></i> LojaFácil</div>
+
+    {% if status and status.mode == "trial" %}
+    <p style="margin:.85rem 0 1.25rem;color:#64748b;font-size:.95rem;line-height:1.65">
+      Seu período gratuito termina em <strong>{{ status.days_left }} dia(s)</strong>.<br>
+      Assine agora para não perder o acesso à sua loja.
+    </p>
+    {% else %}
+    <p style="margin:.85rem 0 1.25rem;color:#64748b;font-size:.95rem;line-height:1.65">
+      Seu acesso expirou.<br>
+      Assine por apenas <strong>R$ {{ price|int }},00/mês</strong> para continuar usando sua loja sem limitações.
+    </p>
+    {% endif %}
+
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem 1.1rem;margin-bottom:1.25rem;text-align:left">
+      <strong style="display:block;font-size:.82rem;color:#15803d;margin-bottom:.5rem">✅ Tudo incluído no plano:</strong>
+      <ul style="margin:0;padding-left:1.1rem;font-size:.84rem;color:#166534;line-height:1.8">
+        <li>Loja virtual completa</li>
+        <li>Produtos e pedidos ilimitados</li>
+        <li>Painel administrativo</li>
+        <li>Notificação de pedidos no WhatsApp</li>
+        <li>Sem taxa por pedido e sem comissão</li>
+      </ul>
+    </div>
+
+    {# O pagamento é manual: o lojista vê as instruções na própria área de assinatura #}
+    <a href="{{ url_for('dashboard.my_subscription') }}" class="btn-primary-lf full-btn" style="justify-content:center;display:flex;min-height:48px;font-size:1rem;margin-bottom:.75rem">
+      <i class="bi bi-credit-card"></i>&nbsp; Assinar por R$ {{ price|int }},00/mês
+    </a>
+
+    <p style="font-size:.78rem;color:#94a3b8;margin-bottom:.75rem">
+      Após o pagamento, o superadmin irá ativar o seu acesso em até 24h.
+    </p>
+
+    <form action="{{ url_for('auth.logout') }}" method="post" style="margin:.25rem 0 0">
+      <button type="submit" style="background:none;border:none;color:#94a3b8;font-size:.82rem;cursor:pointer;text-decoration:underline">
+        Sair da conta
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

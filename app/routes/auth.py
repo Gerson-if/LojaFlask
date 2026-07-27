@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta, timezone
+
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_user, logout_user
 from sqlalchemy.exc import IntegrityError
@@ -5,6 +7,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from .. import db
 from ..models import Store, User
+from ..subscription import TRIAL_DAYS
 from ..utils import ensure_store_upload_dirs, only_digits, slugify
 
 auth_bp = Blueprint("auth", __name__)
@@ -41,14 +44,12 @@ def register():
         if not all([name, store_name, email, password]) or len(password) < 6:
             flash("Preencha os campos obrigatórios e use senha com 6+ caracteres.", "danger")
             return render_template("auth/register.html")
-
         base_slug = slugify(store_name)
         slug = base_slug
         suffix = 2
         while Store.query.filter_by(slug=slug).first():
             slug = f"{base_slug}-{suffix}"
             suffix += 1
-
         user = User(
             name=name,
             phone=phone,
@@ -64,6 +65,10 @@ def register():
             whatsapp=phone,
             description="",
             city="",
+            # ── Trial: 14 dias a partir do cadastro ──────────────────────
+            trial_ends_at=datetime.now(timezone.utc) + timedelta(days=TRIAL_DAYS),
+            subscription_active=False,
+            # ─────────────────────────────────────────────────────────────
         )
         db.session.add_all([user, store])
         try:

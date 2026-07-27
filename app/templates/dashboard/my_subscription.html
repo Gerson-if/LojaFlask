@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block page_name %}Minha assinatura{% endblock %}
+{% block content %}
+
+<div class="page-heading">
+  <div>
+    <div class="page-title">Minha assinatura</div>
+    <div class="page-subtitle">Acompanhe seu plano, datas de renovação e histórico de pagamentos</div>
+  </div>
+</div>
+
+{% set badge_map = {
+  "trial": ("badge-warning", "bi-clock-history", "Período de teste"),
+  "paid": ("badge-success", "bi-patch-check-fill", "Assinatura ativa"),
+  "expired": ("badge-danger", "bi-exclamation-triangle-fill", "Acesso expirado"),
+  "none": ("badge-danger", "bi-x-circle-fill", "Sem assinatura"),
+} %}
+{% set badge_class, badge_icon, status_label = badge_map.get(status.mode, badge_map["none"]) %}
+
+<div class="grid grid-2 dashboard-grid">
+
+  <section class="card-lf stack-md">
+    <div class="section-heading-row">
+      <h3 style="margin:0;font-size:1rem;font-weight:800">Status atual</h3>
+      <span class="badge-lf {{ badge_class }}"><i class="bi {{ badge_icon }}"></i>&nbsp; {{ status_label }}</span>
+    </div>
+
+    {% if status.mode == "trial" %}
+    <p style="color:#64748b;font-size:.9rem;margin:0">
+      Você está no período de teste gratuito de {{ trial_days }} dias.
+      {% if status.days_left is not none %}
+        Restam <strong>{{ status.days_left }} dia{{ 's' if status.days_left != 1 }}</strong>.
+      {% endif %}
+    </p>
+    {% elif status.mode == "paid" %}
+    <p style="color:#64748b;font-size:.9rem;margin:0">
+      Sua assinatura está em dia.
+      {% if status.days_left is not none %}
+        Faltam <strong>{{ status.days_left }} dia{{ 's' if status.days_left != 1 }}</strong> para o próximo vencimento.
+      {% else %}
+        Sem data de vencimento definida.
+      {% endif %}
+    </p>
+    {% elif status.mode == "expired" %}
+    <p style="color:#64748b;font-size:.9rem;margin:0">
+      Seu acesso está bloqueado porque o período de teste ou a assinatura paga já venceu.
+      Renove para voltar a usar sua loja normalmente.
+    </p>
+    {% else %}
+    <p style="color:#64748b;font-size:.9rem;margin:0">
+      Não encontramos nenhuma assinatura ativa para esta loja.
+    </p>
+    {% endif %}
+
+    <div style="display:grid;gap:.65rem;margin-top:.25rem">
+      {% if status.trial_ends_at %}
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <i class="bi bi-clock-history" style="color:#94a3b8;width:18px;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Fim do período de teste</div>
+          <div style="font-weight:700">{{ status.trial_ends_at.strftime("%d/%m/%Y") }}</div>
+        </div>
+      </div>
+      {% endif %}
+      {% if status.paid_until %}
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <i class="bi bi-calendar-check" style="color:#94a3b8;width:18px;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Próxima renovação</div>
+          <div style="font-weight:700">{{ status.paid_until.strftime("%d/%m/%Y") }}</div>
+        </div>
+      </div>
+      {% endif %}
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <i class="bi bi-cash-coin" style="color:#94a3b8;width:18px;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Valor do plano</div>
+          <div style="font-weight:700">R$ {{ "%.2f"|format(price) }} / mês</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card-lf stack-md">
+    <h3 style="margin:0;font-size:1rem;font-weight:800">Como renovar</h3>
+    <p style="color:#64748b;font-size:.9rem;margin:0;line-height:1.6">
+      O pagamento da assinatura é feito manualmente: combine a forma de pagamento
+      com a equipe LojaFácil e, assim que confirmado, seu acesso é renovado em
+      até 24h.
+    </p>
+    {% if support_phone %}
+    <a href="https://wa.me/{{ support_phone }}?text={{ ('Olá! Quero renovar a assinatura da loja ' + store.name) | urlencode }}"
+       class="btn-primary-lf full-btn" target="_blank" rel="noopener"
+       style="justify-content:center;display:flex;min-height:48px">
+      <i class="bi bi-whatsapp"></i>&nbsp; Falar no WhatsApp para renovar
+    </a>
+    {% else %}
+    <div class="empty-state" style="padding:1rem">
+      Entre em contato com o suporte da plataforma para renovar sua assinatura.
+    </div>
+    {% endif %}
+    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem 1.1rem;text-align:left">
+      <strong style="display:block;font-size:.82rem;color:#15803d;margin-bottom:.5rem">✅ Tudo incluído no plano:</strong>
+      <ul style="margin:0;padding-left:1.1rem;font-size:.84rem;color:#166534;line-height:1.8">
+        <li>Loja virtual completa</li>
+        <li>Produtos e pedidos ilimitados</li>
+        <li>Painel administrativo</li>
+        <li>Notificação de pedidos no WhatsApp</li>
+        <li>Sem taxa por pedido e sem comissão</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+<div class="spacer-md"></div>
+
+<section class="card-lf table-card">
+  <div class="section-heading-row">
+    <h3 style="margin:0;font-size:1rem;font-weight:800">Histórico de pagamentos</h3>
+  </div>
+  {% if payments %}
+  <div class="table-scroll">
+    <table class="table-lf">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Ação</th>
+          <th>Período</th>
+          <th>Valor</th>
+          <th>Observação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for payment in payments %}
+        <tr>
+          <td style="white-space:nowrap;color:#64748b;font-size:.875rem">{{ payment.created_at.strftime("%d/%m/%Y") }}</td>
+          <td>
+            {% if payment.action == "renew" %}
+            <span class="badge-lf badge-success"><i class="bi bi-arrow-repeat"></i>&nbsp; Renovação ({{ payment.months }} mês{{ "es" if payment.months != 1 }})</span>
+            {% else %}
+            <span class="badge-lf badge-danger"><i class="bi bi-x-circle"></i>&nbsp; Suspensão</span>
+            {% endif %}
+          </td>
+          <td style="white-space:nowrap;font-size:.875rem;color:#64748b">
+            {% if payment.period_start and payment.period_end %}
+              {{ payment.period_start.strftime("%d/%m/%Y") }} – {{ payment.period_end.strftime("%d/%m/%Y") }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+          <td style="white-space:nowrap;font-weight:700">
+            {% if payment.amount %}R$ {{ "%.2f"|format(payment.amount) }}{% else %}-{% endif %}
+          </td>
+          <td style="color:#64748b;font-size:.85rem">{{ payment.note or "-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-receipt" style="font-size:2rem;display:block;margin-bottom:.5rem;color:#cbd5e1"></i>
+    Nenhum pagamento registrado ainda.
+  </div>
+  {% endif %}
+</section>
+
+{% endblock %}

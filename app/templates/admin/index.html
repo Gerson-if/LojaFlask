@@ -18,6 +18,27 @@
 
 <div class="spacer-md"></div>
 
+<div class="grid grid-4">
+  <div class="stat-card" style="--stat-accent:var(--success)">
+    <div class="stat-label">MRR (receita mensal recorrente)</div>
+    <div class="stat-value" style="font-size:1.65rem">R$ {{ "%.2f"|format(mrr) }}</div>
+  </div>
+  <div class="stat-card" style="--stat-accent:var(--success)">
+    <div class="stat-label">Receita total recebida</div>
+    <div class="stat-value" style="font-size:1.65rem">R$ {{ "%.2f"|format(total_revenue) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Lojas pagantes</div>
+    <div class="stat-value">{{ paid_count }}</div>
+  </div>
+  <div class="stat-card" style="--stat-accent:var(--danger)">
+    <div class="stat-label">Acesso expirado</div>
+    <div class="stat-value">{{ expired_count }}</div>
+  </div>
+</div>
+
+<div class="spacer-md"></div>
+
 <div class="grid grid-2 dashboard-grid">
   <section class="card-lf">
     <div class="section-heading-row">
@@ -51,6 +72,32 @@
       </div>
       <div class="progress-line muted"><span style="width:{{ (suspended_users / users * 100) if users else 0 }}%"></span></div>
     </div>
+
+    <div class="spacer-md"></div>
+
+    <div class="section-heading-row">
+      <h3>Status de assinatura</h3>
+    </div>
+    <div class="donut-chart-row">
+      <svg viewBox="0 0 140 140" class="donut-chart" role="img" aria-label="Distribuição de lojas por status de assinatura">
+        <circle cx="70" cy="70" r="60" fill="none" stroke="#f1f5f9" stroke-width="18"></circle>
+        {% for seg in donut_segments %}
+        <circle cx="70" cy="70" r="60" fill="none" stroke="{{ seg.color }}" stroke-width="18"
+                stroke-dasharray="{{ seg.dash }} {{ seg.gap }}" stroke-dashoffset="{{ seg.offset }}"
+                transform="rotate(-90 70 70)"></circle>
+        {% endfor %}
+        <text x="70" y="66" text-anchor="middle" class="donut-chart-total">{{ stores }}</text>
+        <text x="70" y="84" text-anchor="middle" class="donut-chart-label">lojas</text>
+      </svg>
+      <div class="donut-legend">
+        <div class="donut-legend-item"><span class="donut-dot" style="background:#22c55e"></span> Pagantes <strong>{{ paid_count }}</strong></div>
+        <div class="donut-legend-item"><span class="donut-dot" style="background:#f59e0b"></span> Em teste <strong>{{ trial_count }}</strong></div>
+        <div class="donut-legend-item"><span class="donut-dot" style="background:#ef4444"></span> Vencidos <strong>{{ expired_count }}</strong></div>
+        {% if none_count %}
+        <div class="donut-legend-item"><span class="donut-dot" style="background:#cbd5e1"></span> Sem assinatura <strong>{{ none_count }}</strong></div>
+        {% endif %}
+      </div>
+    </div>
   </section>
 </div>
 
@@ -79,6 +126,38 @@
   </div>
   {% else %}
   <div class="empty-state">Nenhuma loja criada ainda.</div>
+  {% endif %}
+</section>
+
+<div class="spacer-md"></div>
+
+<section class="card-lf table-card">
+  <div class="section-heading-row">
+    <h3>Renovações recentes</h3>
+    <a href="{{ url_for('dashboard.admin_users') }}" class="btn-outline-lf" style="font-size:.8rem">Ver todos os lojistas</a>
+  </div>
+  {% if recent_payments %}
+  <div class="table-scroll">
+    <table class="table-lf">
+      <thead><tr><th>Data</th><th>Loja</th><th>Período</th><th>Valor</th></tr></thead>
+      <tbody>
+        {% for payment in recent_payments %}
+        <tr>
+          <td style="white-space:nowrap;color:#64748b;font-size:.875rem">{{ payment.created_at.strftime("%d/%m/%Y") }}</td>
+          <td><strong>{{ payment.store.name }}</strong></td>
+          <td style="white-space:nowrap;font-size:.875rem;color:#64748b">
+            {% if payment.period_start and payment.period_end %}
+              {{ payment.period_start.strftime("%d/%m/%Y") }} – {{ payment.period_end.strftime("%d/%m/%Y") }}
+            {% else %}-{% endif %}
+          </td>
+          <td style="white-space:nowrap;font-weight:700">R$ {{ "%.2f"|format(payment.amount) if payment.amount else "-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">Nenhuma renovação registrada ainda.</div>
   {% endif %}
 </section>
 {% endblock %}
