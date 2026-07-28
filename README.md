@@ -57,7 +57,8 @@ Esse "snapshot" de dados do cliente em `orders` é intencional: se o cliente dep
 
 ```powershell
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate #windowns
+source .venv\bin\activate #linux
 pip install -r requirements.txt
 copy .env.example .env
 flask --app run.py init-db
