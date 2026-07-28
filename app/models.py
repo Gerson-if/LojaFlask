@@ -24,6 +24,13 @@ class User(UserMixin, TimestampMixin, db.Model):
     role = db.Column(db.Enum("superadmin", "lojista"), nullable=False, default="lojista")
     active = db.Column(db.Boolean, nullable=False, default=True)
 
+    # ── Segurança da conta ──────────────────────────────────────────────────
+    failed_login_attempts = db.Column(db.Integer, nullable=False, default=0)
+    locked_until = db.Column(db.DateTime, nullable=True)
+    last_login_at = db.Column(db.DateTime, nullable=True)
+    password_changed_at = db.Column(db.DateTime, nullable=True)
+    # ─────────────────────────────────────────────────────────────────────────
+
     store = db.relationship("Store", back_populates="owner", uselist=False)
 
     @property
@@ -32,6 +39,11 @@ class User(UserMixin, TimestampMixin, db.Model):
 
     def is_superadmin(self):
         return self.role == "superadmin"
+
+    def is_locked(self):
+        """True se a conta está temporariamente bloqueada por excesso de
+        tentativas de login com senha errada (ver utils.register_failed_login)."""
+        return bool(self.locked_until and self.locked_until > datetime.utcnow())
 
 
 class Store(TimestampMixin, db.Model):

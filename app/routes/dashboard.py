@@ -855,6 +855,47 @@ def finance():
 
 
 # ---------------------------------------------------------------------------
+# Segurança da conta (lojista) — sem @require_active_subscription de
+# propósito: o lojista precisa conseguir proteger a própria conta mesmo com
+# acesso vencido (ex.: trocar senha após suspeitar de acesso indevido).
+# ---------------------------------------------------------------------------
+
+@dashboard_bp.route("/seguranca", methods=["GET", "POST"])
+@login_required
+@lojista_required
+def security():
+    from werkzeug.security import check_password_hash, generate_password_hash
+
+    from ..utils import validate_password_strength
+
+    if request.method == "POST":
+        current_password = request.form.get("current_password", "")
+        new_password = request.form.get("new_password", "")
+        new_password_confirm = request.form.get("new_password_confirm", "")
+
+        if not check_password_hash(current_user.password_hash, current_password):
+            flash("Senha atual incorreta.", "danger")
+        else:
+            password_error = validate_password_strength(new_password)
+            if password_error:
+                flash(password_error, "danger")
+            elif new_password != new_password_confirm:
+                flash("As senhas não coincidem.", "danger")
+            else:
+                current_user.password_hash = generate_password_hash(new_password)
+                current_user.password_changed_at = datetime.utcnow()
+                db.session.commit()
+                flash("Senha atualizada com sucesso.", "success")
+                return redirect(url_for("dashboard.security"))
+
+    return render_template(
+        "dashboard/security.html",
+        last_login_at=current_user.last_login_at,
+        password_changed_at=current_user.password_changed_at,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Minha assinatura (lojista) — sem @require_active_subscription de propósito:
 # o lojista precisa conseguir ver e renovar mesmo com acesso vencido.
 # ---------------------------------------------------------------------------
@@ -877,6 +918,21 @@ def my_subscription():
         .filter(User.phone.isnot(None), User.phone != "")
         .first()
     )
+
+    # Percentual do ciclo atual já decorrido, para a barra de progresso.
+    # Trial: ciclo de TRIAL_DAYS dias. Pago: usa o período da renovação mais
+    # recente (se houver) como referência de duração do ciclo; sem esse
+    # histórico, assume 30 dias como aproximação razoável.
+    progress_percent = None
+    if status["mode"] == "trial" and status["days_left"] is not None:
+        days_used = max(0, TRIAL_DAYS - status["days_left"])
+        progress_percent = min(100, round(days_used / TRIAL_DAYS * 100))
+    elif status["mode"] == "paid" and status["days_left"] is not None:
+        last_renew = next((p for p in payments if p.action == "renew" and p.period_start and p.period_end), None)
+        cycle_days = max((last_renew.period_end - last_renew.period_start).days, 1) if last_renew else 30
+        days_used = max(0, cycle_days - status["days_left"])
+        progress_percent = min(100, round(days_used / cycle_days * 100))
+
     return render_template(
         "dashboard/my_subscription.html",
         store=store,
@@ -884,6 +940,7 @@ def my_subscription():
         payments=payments,
         price=PLAN_PRICE_MONTHLY,
         trial_days=TRIAL_DAYS,
+        progress_percent=progress_percent,
         support_phone=only_digits(support_admin.phone) if support_admin else None,
     )
 
@@ -896,13 +953,44 @@ def my_subscription():
 @login_required
 @superadmin_required
 def admin_users():
+    from ..subscription import store_access_status
+
     q = request.args.get("q", "").strip()
+    account_filter = request.args.get("account", "")  # "active" | "suspended" | ""
+    sub_filter = request.args.get("sub", "")  # "trial" | "paid" | "expired" | "none" | ""
+
     query = User.query.filter_by(role="lojista")
     if q:
         query = query.filter(User.name.ilike(f"%{q}%") | User.email.ilike(f"%{q}%"))
+    if account_filter == "active":
+        query = query.filter_by(active=True)
+    elif account_filter == "suspended":
+        query = query.filter_by(active=False)
+
+    all_users = query.order_by(User.created_at.desc()).all()
+
+    # Resumo geral (sobre TODOS os lojistas, não só o resultado filtrado) —
+    # usado nos cards de contagem no topo da página.
+    summary = {"active": 0, "suspended": 0, "trial": 0, "paid": 0, "expired": 0, "none": 0}
+    rows = []
+    for user in User.query.filter_by(role="lojista").all():
+        status = store_access_status(user.store)
+        summary["active" if user.active else "suspended"] += 1
+        summary[status["mode"]] += 1
+
+    for user in all_users:
+        status = store_access_status(user.store)
+        if sub_filter and status["mode"] != sub_filter:
+            continue
+        rows.append((user, status))
+
     return render_template(
         "admin/users.html",
-        users=query.order_by(User.created_at.desc()).all(),
+        rows=rows,
+        summary=summary,
+        total_lojistas=summary["active"] + summary["suspended"],
+        account_filter=account_filter,
+        sub_filter=sub_filter,
     )
 
 
@@ -917,16 +1005,37 @@ def admin_user_toggle(user_id):
     return redirect(url_for("dashboard.admin_users"))
 
 
+@dashboard_bp.route("/admin/lojistas/<int:user_id>/desbloquear", methods=["POST"])
+@login_required
+@superadmin_required
+def admin_unlock_user(user_id):
+    user = User.query.filter_by(id=user_id, role="lojista").first_or_404()
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    db.session.commit()
+    flash(f"Conta de {user.name} desbloqueada.", "success")
+    return redirect(request.referrer or url_for("dashboard.admin_users"))
+
+
 @dashboard_bp.route("/admin/lojistas/<int:user_id>/senha", methods=["POST"])
 @login_required
 @superadmin_required
 def admin_user_password(user_id):
+    from ..utils import validate_password_strength
+
     user = User.query.filter_by(id=user_id, role="lojista").first_or_404()
     password = request.form.get("password", "")
-    if len(password) < 6:
-        flash("Senha deve ter pelo menos 6 caracteres.", "danger")
+    password_error = validate_password_strength(password)
+    if password_error:
+        flash(password_error, "danger")
     else:
         user.password_hash = generate_password_hash(password)
+        user.password_changed_at = datetime.utcnow()
+        # Redefinir a senha é uma ação administrativa legítima — libera
+        # qualquer bloqueio por tentativas anteriores, já que o lojista vai
+        # receber a senha nova diretamente do superadmin.
+        user.failed_login_attempts = 0
+        user.locked_until = None
         db.session.commit()
         flash("Senha atualizada.", "success")
     return redirect(url_for("dashboard.admin_users"))

@@ -9,6 +9,29 @@
   </div>
 </div>
 
+{% if status.mode == "expired" %}
+<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:1rem 1.1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+  <i class="bi bi-exclamation-triangle-fill" style="color:#b91c1c;font-size:1.1rem"></i>
+  <span style="color:#991b1b;font-size:.9rem;flex:1">
+    <strong>Seu acesso está bloqueado.</strong> Renove sua assinatura para voltar a usar o painel e manter sua loja pública no ar.
+  </span>
+</div>
+{% elif status.mode == "trial" and status.days_left is not none and status.days_left <= 3 %}
+<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:1rem 1.1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+  <i class="bi bi-clock-history" style="color:#b45309;font-size:1.1rem"></i>
+  <span style="color:#92400e;font-size:.9rem;flex:1">
+    Seu período de teste termina em <strong>{{ status.days_left }} dia{{ 's' if status.days_left != 1 }}</strong>. Assine para não perder o acesso.
+  </span>
+</div>
+{% elif status.mode == "paid" and status.days_left is not none and status.days_left <= 7 %}
+<div style="background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:1rem 1.1rem;margin-bottom:1.25rem;display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+  <i class="bi bi-clock-history" style="color:#b45309;font-size:1.1rem"></i>
+  <span style="color:#92400e;font-size:.9rem;flex:1">
+    Sua assinatura vence em <strong>{{ status.days_left }} dia{{ 's' if status.days_left != 1 }}</strong>. Renove para evitar interrupções.
+  </span>
+</div>
+{% endif %}
+
 {% set badge_map = {
   "trial": ("badge-warning", "bi-clock-history", "Período de teste"),
   "paid": ("badge-success", "bi-patch-check-fill", "Assinatura ativa"),
@@ -50,6 +73,18 @@
     <p style="color:#64748b;font-size:.9rem;margin:0">
       Não encontramos nenhuma assinatura ativa para esta loja.
     </p>
+    {% endif %}
+
+    {% if progress_percent is not none %}
+    <div>
+      <div class="progress-line {{ 'muted' if status.mode != 'paid' else '' }}">
+        <span style="width:{{ progress_percent }}%;{% if status.days_left is not none and status.days_left <= 3 %}background:linear-gradient(90deg,#f59e0b,#ef4444){% endif %}"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:.72rem;color:#94a3b8;margin-top:.3rem">
+        <span>Início do ciclo</span>
+        <span>{{ progress_percent }}% concluído</span>
+      </div>
+    </div>
     {% endif %}
 
     <div style="display:grid;gap:.65rem;margin-top:.25rem">
@@ -136,8 +171,10 @@
         <tr>
           <td style="white-space:nowrap;color:#64748b;font-size:.875rem">{{ payment.created_at.strftime("%d/%m/%Y") }}</td>
           <td>
-            {% if payment.action == "renew" %}
+            {% if payment.action == "renew" and payment.months %}
             <span class="badge-lf badge-success"><i class="bi bi-arrow-repeat"></i>&nbsp; Renovação ({{ payment.months }} mês{{ "es" if payment.months != 1 }})</span>
+            {% elif payment.action == "renew" %}
+            <span class="badge-lf badge-info"><i class="bi bi-pencil-square"></i>&nbsp; Data ajustada</span>
             {% else %}
             <span class="badge-lf badge-danger"><i class="bi bi-x-circle"></i>&nbsp; Suspensão</span>
             {% endif %}

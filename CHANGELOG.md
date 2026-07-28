@@ -1,5 +1,82 @@
 # Changelog desta correção
 
+## 🆕 Landing page, segurança de contas e melhorias de gestão
+
+### 🔴 Bug corrigido: botão "Criar conta" deformado no celular
+No menu superior da landing page, o botão "Criar loja grátis" não tinha
+`white-space: nowrap`. Em qualquer celular comum (confirmei matematicamente:
+o nav precisava de ~460px para caber numa linha, mas a tela tem 360-375px),
+o texto quebrava em duas linhas dentro do botão, fazendo-o crescer e ficar
+visualmente deformado comparado aos outros elementos do menu. Corrigido com
+`white-space: nowrap` em todos os botões do nav, além de um texto mais curto
+("Criar conta") que substitui o texto longo abaixo de 560px de largura —
+agora cabe confortavelmente até em telas de 320px.
+
+### 🆕 Landing page com termos de uso e política de privacidade
+Adicionados como links discretos no rodapé, abrindo um modal leve (sem
+JavaScript, via `:target` do CSS) — não chamam atenção do visitante, mas
+estão acessíveis.
+
+### 🆕 Segurança de contas
+- **Bloqueio temporário após tentativas de login incorretas**: 5 tentativas
+  com senha errada bloqueiam a conta por 15 minutos. O superadmin pode
+  desbloquear manualmente a qualquer momento (botão na listagem de
+  lojistas e na página de detalhe da assinatura).
+- **Política de senha mais forte**: mínimo de 8 caracteres com letra e
+  número (antes eram só 6 caracteres sem nenhum outro requisito), aplicada
+  no cadastro, na troca de senha pelo próprio lojista e na redefinição feita
+  pelo superadmin.
+- **Confirmação de senha no cadastro** — antes era possível digitar errado
+  sem perceber.
+- **Nova página "Segurança" para o lojista** (`/painel/seguranca`): antes,
+  só o superadmin conseguia trocar a senha de um lojista — o próprio
+  lojista não tinha nenhuma forma de trocar a própria senha. Agora ele pode
+  trocá-la a qualquer momento (pedindo a senha atual), e ver quando foi o
+  último login e a última troca de senha.
+- Login bem-sucedido agora registra a data/hora (`last_login_at`), visível
+  tanto para o lojista (página de Segurança) quanto para o superadmin
+  (listagem e detalhe de cada lojista).
+
+### 🆕 Gestão de lojistas (superadmin) melhorada
+- Cards de resumo no topo (contas ativas, pagantes, em teste, vencidos),
+  cada um já filtrando a lista ao clicar.
+- Filtro por status de conta (ativa/suspensa) e por status de assinatura
+  (pago/teste/vencido/sem assinatura), além da busca por nome/e-mail que já
+  existia.
+- Linhas de lojistas com assinatura vencida agora têm um destaque visual
+  (fundo levemente vermelho) para chamar atenção mais rápido.
+- Indicador de conta bloqueada por tentativas de login, com botão de
+  desbloqueio direto na listagem.
+- A lógica de cálculo de status de assinatura — antes duplicada em Jinja na
+  própria tabela — passou a usar a mesma função central já usada em todo o
+  resto do sistema (`store_access_status`), eliminando uma fonte de
+  inconsistência.
+
+### 🆕 Área de assinatura do superadmin (detalhe por lojista) melhorada
+- Mostra também o último login do lojista.
+- Indicador e ação de desbloqueio de conta bloqueada, direto na tela.
+- Corrigido um bug de exibição: ajustes manuais de data (ação "definir
+  data de vencimento") apareciam no histórico como "Renovação (None mês)" —
+  agora aparecem corretamente como "Data ajustada manualmente", distinto de
+  uma renovação paga de fato.
+
+### 🆕 Área de assinatura do lojista ("Minha assinatura") melhorada
+- Alerta visual proeminente no topo da página quando o acesso está
+  bloqueado, ou quando o trial/assinatura está perto de vencer (≤ 3 dias no
+  trial, ≤ 7 dias na assinatura paga) — antes essa informação só aparecia
+  discretamente dentro de um badge pequeno.
+- Barra de progresso visual mostrando quanto do ciclo atual (trial ou
+  mensalidade) já passou.
+- Corrigido o mesmo bug de exibição do histórico mencionado acima
+  ("Renovação (None mês)" → "Data ajustada").
+
+### 🗄️ Banco de dados desta rodada
+Nova migration `f6a7b8c9d0e1`, totalmente aditiva, em `users`:
+`failed_login_attempts`, `locked_until`, `last_login_at`,
+`password_changed_at`.
+
+---
+
 ## 🆕 Carrinho, favicon, financeiro, variações de produto e bloqueio por inadimplência
 
 ### 🔴 Bug crítico corrigido: quantidade no carrinho não atualizava

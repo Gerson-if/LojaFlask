@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block page_name %}Segurança{% endblock %}
+{% block content %}
+
+<div class="page-heading">
+  <div>
+    <div class="page-title">Segurança da conta</div>
+    <div class="page-subtitle">Gerencie a senha e veja a atividade recente da sua conta</div>
+  </div>
+</div>
+
+<div class="grid grid-2 dashboard-grid">
+
+  <section class="card-lf stack-md">
+    <h3 style="margin:0;font-size:1rem;font-weight:800">Trocar senha</h3>
+    <form method="post" class="stack-md">
+      <div>
+        <label class="form-label-lf">Senha atual</label>
+        <input class="input-lf" name="current_password" type="password" required autocomplete="current-password">
+      </div>
+      <div>
+        <label class="form-label-lf">Nova senha</label>
+        <input class="input-lf" name="new_password" type="password" minlength="8" required autocomplete="new-password">
+        <small style="color:#94a3b8;font-size:.78rem;display:block;margin-top:.3rem">Mínimo de 8 caracteres, com letras e números.</small>
+      </div>
+      <div>
+        <label class="form-label-lf">Confirmar nova senha</label>
+        <input class="input-lf" name="new_password_confirm" type="password" minlength="8" required autocomplete="new-password">
+      </div>
+      <button type="submit" class="btn-primary-lf full-btn" style="justify-content:center;display:flex">
+        <i class="bi bi-shield-lock"></i>&nbsp; Atualizar senha
+      </button>
+    </form>
+  </section>
+
+  <section class="card-lf stack-md">
+    <h3 style="margin:0;font-size:1rem;font-weight:800">Atividade da conta</h3>
+    <div style="display:grid;gap:.65rem">
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <i class="bi bi-box-arrow-in-right" style="color:#94a3b8;width:18px;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Último login</div>
+          <div style="font-weight:700">
+            {% if last_login_at %}{{ last_login_at.strftime("%d/%m/%Y às %H:%M") }}{% else %}Não registrado{% endif %}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:.75rem;align-items:flex-start">
+        <i class="bi bi-key" style="color:#94a3b8;width:18px;flex-shrink:0;margin-top:.1rem"></i>
+        <div>
+          <div style="font-size:.75rem;color:#94a3b8;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Última troca de senha</div>
+          <div style="font-weight:700">
+            {% if password_changed_at %}{{ password_changed_at.strftime("%d/%m/%Y") }}{% else %}Não registrado{% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:1rem 1.1rem;text-align:left">
+      <strong style="display:block;font-size:.82rem;color:#1d4ed8;margin-bottom:.5rem"><i class="bi bi-info-circle"></i> Dicas de segurança</strong>
+      <ul style="margin:0;padding-left:1.1rem;font-size:.84rem;color:#1e3a8a;line-height:1.8">
+        <li>Não use a mesma senha de outros sites.</li>
+        <li>Troque sua senha se suspeitar de acesso indevido.</li>
+        <li>Após 5 tentativas de login incorretas, a conta é bloqueada por 15 minutos.</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+{% endblock %}

@@ -1,12 +1,60 @@
 import re
 import secrets
 import string
+from datetime import datetime, timedelta
 from functools import wraps
 from pathlib import Path
 
 from flask import abort, current_app, flash, redirect, url_for
 from flask_login import current_user
 from werkzeug.utils import secure_filename
+
+
+# ── Segurança de conta ───────────────────────────────────────────────────────
+MAX_LOGIN_ATTEMPTS = 5
+LOCKOUT_MINUTES = 15
+MIN_PASSWORD_LENGTH = 8
+
+
+def validate_password_strength(password):
+    """Política de senha: mínimo 8 caracteres, com ao menos uma letra e um
+    número. Retorna None se a senha é válida, ou uma mensagem de erro clara
+    para mostrar ao usuário."""
+    if not password or len(password) < MIN_PASSWORD_LENGTH:
+        return f"A senha precisa ter pelo menos {MIN_PASSWORD_LENGTH} caracteres."
+    if not re.search(r"[A-Za-z]", password):
+        return "A senha precisa conter ao menos uma letra."
+    if not re.search(r"\d", password):
+        return "A senha precisa conter ao menos um número."
+    return None
+
+
+def register_failed_login(user):
+    """Incrementa o contador de tentativas falhas e bloqueia temporariamente
+    a conta se o limite for atingido. Chamado pela rota de login a cada
+    tentativa com senha incorreta."""
+    user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+    if user.failed_login_attempts >= MAX_LOGIN_ATTEMPTS:
+        user.locked_until = datetime.utcnow() + timedelta(minutes=LOCKOUT_MINUTES)
+
+
+def register_successful_login(user):
+    """Zera o contador de tentativas falhas e registra o horário do login."""
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    user.last_login_at = datetime.utcnow()
+
+
+def lockout_minutes_left(user):
+    """Minutos restantes de bloqueio (arredondado para cima), ou 0 se a
+    conta não está bloqueada."""
+    if not user.locked_until:
+        return 0
+    remaining = (user.locked_until - datetime.utcnow()).total_seconds()
+    if remaining <= 0:
+        return 0
+    return int(remaining // 60) + 1
+# ─────────────────────────────────────────────────────────────────────────────
 
 
 def slugify(value):

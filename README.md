@@ -19,7 +19,7 @@ Migração do sistema HTML/localStorage para uma aplicação Flask com banco rel
 |---|---|---|
 | Landing page | `/` | Pública. Usuário autenticado é redirecionado para `/painel`. |
 | Autenticação | `/login`, `/cadastro`, `/logout` | Públicas. |
-| Painel (lojista/admin) | `/painel/...` | Exige login. Isolado da raiz do site por `url_prefix="/painel"` no blueprint do dashboard — não há mais conflito de rota com a landing page. Inclui `/painel/assinatura` (lojista vê status e histórico de pagamentos), `/painel/financeiro` (margem de lucro e produtos mais vendidos) e `/painel/admin/lojistas/<id>/assinatura/historico` (superadmin vê e gerencia a assinatura de qualquer lojista, inclusive corrigindo a data de vencimento manualmente). |
+| Painel (lojista/admin) | `/painel/...` | Exige login. Isolado da raiz do site por `url_prefix="/painel"` no blueprint do dashboard — não há mais conflito de rota com a landing page. Inclui `/painel/assinatura` (lojista vê status e histórico de pagamentos), `/painel/financeiro` (margem de lucro e produtos mais vendidos), `/painel/seguranca` (lojista troca a própria senha) e `/painel/admin/lojistas/<id>/assinatura/historico` (superadmin vê e gerencia a assinatura de qualquer lojista, inclusive corrigindo a data de vencimento manualmente). |
 | Loja pública | `/loja/<slug>/...` | Pública, uma por lojista. |
 | Assinatura | `/assinatura-expirada` | Tela de bloqueio quando o trial/assinatura vence. |
 | Health check | `/health` | Usado por orquestradores/monitoramento. |
@@ -146,6 +146,7 @@ O projeto usa Flask-Migrate (Alembic). O histórico atual de migrations, em orde
 5. `c3d4e5f6a7b8` — e-mail do cliente no pedido (`customer_email`) e rastreio de mudança de status (`status_updated_at`, com índice em `status`).
 6. `d4e5f6a7b8c9` — tabela `subscription_payments`, histórico de renovações/suspensões de assinatura.
 7. `e5f6a7b8c9d0` — `products.cost_price`, tabela `product_variants` (tamanho/cor/estoque/preço), e snapshot de variação/custo em `order_items` (`variant_id`, `variant_label`, `unit_cost`).
+8. `f6a7b8c9d0e1` — segurança de conta em `users`: `failed_login_attempts`, `locked_until`, `last_login_at`, `password_changed_at`.
 
 Sempre que os modelos em `app/models.py` mudarem, gere uma nova migration em vez de editar o banco manualmente:
 

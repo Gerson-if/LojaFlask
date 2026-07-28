@@ -31,22 +31,24 @@
     background: rgba(253,252,250,.92); backdrop-filter: blur(12px);
     border-bottom: 1px solid var(--line);
     display: flex; align-items: center; justify-content: space-between;
-    padding: 0 2rem; min-height: 68px; gap: 1.5rem;
+    padding: .6rem 2rem; min-height: 68px; gap: 1.5rem;
+    flex-wrap: wrap; row-gap: .5rem;
   }
   .nav-logo { display: flex; align-items: center; gap: .55rem; font-family: 'Fraunces', serif; font-size: 1.35rem; font-weight: 700; color: var(--blue); }
   .nav-logo .logo-icon { width: 36px; height: 36px; border-radius: 9px; background: var(--blue); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
   .nav-links { display: flex; align-items: center; gap: 1.75rem; }
   .nav-links a { font-size: .9rem; font-weight: 500; color: var(--muted); transition: color .15s; }
   .nav-links a:hover { color: var(--ink); }
-  .nav-actions { display: flex; align-items: center; gap: .75rem; }
-  .btn-ghost { padding: .55rem 1.1rem; border-radius: 8px; font-size: .88rem; font-weight: 600; color: var(--ink); border: 1.5px solid var(--line); background: transparent; cursor: pointer; transition: border-color .15s, background .15s; }
+  .nav-actions { display: flex; align-items: center; gap: .6rem; flex-shrink: 0; }
+  .btn-ghost { padding: .55rem 1.1rem; border-radius: 8px; font-size: .88rem; font-weight: 600; color: var(--ink); border: 1.5px solid var(--line); background: transparent; cursor: pointer; transition: border-color .15s, background .15s; white-space: nowrap; display: inline-flex; align-items: center; }
   .btn-ghost:hover { border-color: var(--blue); color: var(--blue); }
-  .btn-cta { padding: .6rem 1.25rem; border-radius: 8px; font-size: .88rem; font-weight: 700; color: #fff; background: var(--blue); border: none; cursor: pointer; transition: background .15s, transform .15s; }
+  .btn-cta { padding: .6rem 1.25rem; border-radius: 8px; font-size: .88rem; font-weight: 700; color: #fff; background: var(--blue); border: none; cursor: pointer; transition: background .15s, transform .15s; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: .4rem; }
   .btn-cta:hover { background: var(--blue-dark); transform: translateY(-1px); }
   .btn-cta.large { padding: .85rem 2rem; font-size: 1rem; border-radius: 10px; }
   .btn-cta.white { background: #fff; color: var(--blue); }
   .btn-cta.white:hover { background: #f0f6ff; }
-  .btn-outline-white { padding: .85rem 1.75rem; border-radius: 10px; font-size: 1rem; font-weight: 700; color: #fff; background: transparent; border: 1.5px solid rgba(255,255,255,.45); cursor: pointer; transition: background .15s; }
+  .nav-cta-short { display: none; }
+  .btn-outline-white { padding: .85rem 1.75rem; border-radius: 10px; font-size: 1rem; font-weight: 700; color: #fff; background: transparent; border: 1.5px solid rgba(255,255,255,.45); cursor: pointer; transition: background .15s; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; }
   .btn-outline-white:hover { background: rgba(255,255,255,.12); }
 
   /* ── HERO ── */
@@ -145,6 +147,33 @@
   /* ── FOOTER ── */
   .footer { border-top: 1px solid var(--line); padding: 2rem; text-align: center; color: var(--muted); font-size: .82rem; }
   .footer strong { color: var(--blue); font-family: 'Fraunces', serif; }
+  .footer-legal { margin-top: .65rem; font-size: .76rem; }
+  .footer-legal a { color: #94a3b8; text-decoration: underline; text-underline-offset: 2px; }
+  .footer-legal a:hover { color: var(--muted); }
+  .footer-legal span { color: #cbd5e1; margin: 0 .4rem; }
+
+  /* ── MODAIS DE TERMOS/PRIVACIDADE (via :target, sem JS) ── */
+  .legal-modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(15,23,42,.55); padding: 2rem 1rem;
+    overflow-y: auto;
+  }
+  .legal-modal-overlay:target { display: flex; align-items: flex-start; justify-content: center; }
+  .legal-modal {
+    background: #fff; border-radius: 16px; max-width: 640px; width: 100%;
+    padding: 2.25rem 2rem; position: relative; margin: 2rem auto;
+    box-shadow: 0 30px 80px rgba(0,0,0,.25);
+  }
+  .legal-modal-close {
+    position: absolute; top: 1.1rem; right: 1.1rem; width: 34px; height: 34px;
+    border-radius: 50%; background: #f1f5f9; color: var(--muted);
+    display: flex; align-items: center; justify-content: center; font-size: .9rem;
+  }
+  .legal-modal-close:hover { background: #e2e8f0; color: var(--ink); }
+  .legal-modal h2 { font-family: 'Fraunces', serif; font-size: 1.5rem; margin-bottom: 1.25rem; padding-right: 2rem; }
+  .legal-modal-body { max-height: 60vh; overflow-y: auto; padding-right: .25rem; }
+  .legal-modal-body h3 { font-size: .95rem; margin: 1.25rem 0 .4rem; color: var(--ink); }
+  .legal-modal-body p { font-size: .88rem; color: var(--muted); line-height: 1.7; margin-bottom: .5rem; }
 
   /* ── RESPONSIVE ── */
   @media (max-width: 900px) {
@@ -159,9 +188,22 @@
     .nav-links { display: none; }
   }
   @media (max-width: 560px) {
-    .nav { padding: 0 1rem; }
+    .nav { padding: 0 1rem; gap: .6rem; }
+    .nav-logo { font-size: 1.1rem; gap: .4rem; }
+    .nav-logo .logo-icon { width: 30px; height: 30px; font-size: .95rem; }
+    .nav-actions { gap: .4rem; }
+    .nav-actions .btn-ghost { padding: .5rem .7rem; font-size: .8rem; }
+    .nav-actions .btn-cta { padding: .5rem .8rem; font-size: .8rem; }
+    .nav-cta-full { display: none; }
+    .nav-cta-short { display: inline; }
     .features-grid, .steps-row { grid-template-columns: 1fr; }
     .hero-h1 { font-size: 2rem; }
+    .hero-actions { flex-direction: column; align-items: stretch; }
+    .hero-actions .btn-cta.large, .hero-actions .btn-ghost { width: 100%; }
+  }
+  @media (max-width: 380px) {
+    .nav-actions .btn-ghost { padding: .5rem .6rem; font-size: .76rem; }
+    .nav-actions .btn-cta { padding: .5rem .65rem; font-size: .76rem; }
   }
 </style>
 </head>
@@ -180,7 +222,10 @@
   </div>
   <div class="nav-actions">
     <a href="/login" class="btn-ghost">Entrar</a>
-    <a href="/cadastro" class="btn-cta">Criar loja grátis</a>
+    <a href="/cadastro" class="btn-cta">
+      <span class="nav-cta-full">Criar loja grátis</span>
+      <span class="nav-cta-short">Criar conta</span>
+    </a>
   </div>
 </nav>
 
@@ -344,7 +389,54 @@
 <footer class="footer">
   <p><strong>LojaFácil</strong> &nbsp;·&nbsp; Plataforma de lojas virtuais &nbsp;·&nbsp; R$ 20/mês após 14 dias grátis</p>
   <p style="margin-top:.4rem">© 2024 LojaFácil. Todos os direitos reservados.</p>
+  <p class="footer-legal">
+    <a href="#termos-de-uso">Termos de uso</a>
+    <span aria-hidden="true">·</span>
+    <a href="#politica-de-privacidade">Política de privacidade</a>
+  </p>
 </footer>
+
+<!-- TERMOS DE USO (modal discreto, via :target — sem JS) -->
+<div id="termos-de-uso" class="legal-modal-overlay">
+  <div class="legal-modal">
+    <a href="#" class="legal-modal-close" aria-label="Fechar"><i class="bi bi-x-lg"></i></a>
+    <h2>Termos de uso</h2>
+    <div class="legal-modal-body">
+      <p>Última atualização: 2026.</p>
+      <p>Ao criar uma conta na LojaFácil, você concorda com estes termos. Eles existem para deixar claro o que cada parte pode esperar da plataforma.</p>
+      <h3>1. O que é a LojaFácil</h3>
+      <p>A LojaFácil é uma plataforma que permite a qualquer pessoa criar e gerenciar uma loja virtual própria, com catálogo de produtos, pedidos e painel administrativo.</p>
+      <h3>2. Cadastro e responsabilidade da conta</h3>
+      <p>Você é responsável pelas informações cadastradas na sua loja e pela veracidade dos produtos e preços anunciados. Mantenha sua senha em sigilo — você é responsável por qualquer atividade realizada com sua conta.</p>
+      <h3>3. Assinatura e pagamento</h3>
+      <p>Após o período de teste gratuito, o uso contínuo da plataforma depende do pagamento da assinatura mensal vigente. O acesso ao painel e à loja pública pode ser suspenso em caso de não pagamento, mediante aviso prévio.</p>
+      <h3>4. Conteúdo proibido</h3>
+      <p>Não é permitido anunciar produtos ilegais, falsificados ou que violem direitos de terceiros. A LojaFácil pode suspender lojas que descumprirem esta condição.</p>
+      <h3>5. Relação com os clientes da sua loja</h3>
+      <p>A LojaFácil é a fornecedora da plataforma, não do produto vendido. A relação de compra e venda é entre o lojista e o cliente final; cabe ao lojista honrar prazos, trocas e demais obrigações dessa relação.</p>
+      <h3>6. Alterações</h3>
+      <p>Estes termos podem ser atualizados. Alterações relevantes serão comunicadas aos lojistas pelo e-mail cadastrado.</p>
+    </div>
+  </div>
+</div>
+
+<!-- POLÍTICA DE PRIVACIDADE -->
+<div id="politica-de-privacidade" class="legal-modal-overlay">
+  <div class="legal-modal">
+    <a href="#" class="legal-modal-close" aria-label="Fechar"><i class="bi bi-x-lg"></i></a>
+    <h2>Política de privacidade</h2>
+    <div class="legal-modal-body">
+      <p>Última atualização: 2026.</p>
+      <p>Coletamos apenas os dados necessários para o funcionamento da sua loja: nome, e-mail, telefone e informações da loja que você cadastrar, além dos dados de pedidos feitos pelos seus clientes.</p>
+      <h3>Como usamos seus dados</h3>
+      <p>Os dados são usados para operar sua conta, processar pedidos e enviar comunicações sobre o funcionamento da plataforma — nunca são vendidos a terceiros.</p>
+      <h3>Dados dos seus clientes</h3>
+      <p>Os dados de clientes coletados no checkout da sua loja (nome, telefone, e-mail, endereço) pertencem à relação entre você e seu cliente; a LojaFácil os armazena apenas para viabilizar o funcionamento do pedido.</p>
+      <h3>Seus direitos</h3>
+      <p>Você pode solicitar a exportação ou exclusão dos seus dados a qualquer momento entrando em contato com o suporte.</p>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
