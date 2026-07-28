@@ -53,17 +53,42 @@ Tabelas modeladas:
 
 Esse "snapshot" de dados do cliente em `orders` é intencional: se o cliente depois mudar nome/telefone/e-mail no cadastro, o histórico do pedido continua mostrando os dados de quando a compra foi feita.
 
+````markdown
 ## Instalação local
 
-```powershell
+```bash
+# Criar ambiente virtual
 python -m venv .venv
-.\.venv\Scripts\Activate #windowns
-source .venv\bin\activate #linux
+
+# Ativar ambiente virtual
+
+# Windows (PowerShell)
+.\.venv\Scripts\Activate
+
+# Linux/macOS
+source .venv/bin/activate
+
+# Instalar dependências
 pip install -r requirements.txt
+
+# Criar arquivo de configuração
+
+# Windows
 copy .env.example .env
+
+# Linux/macOS
+cp .env.example .env
+
+# Inicializar o banco de dados
 flask --app run.py init-db
+
+# Executar a aplicação
 flask --app run.py run
+````
+
 ```
+```
+
 
 Se usar MariaDB, crie antes o banco:
 
