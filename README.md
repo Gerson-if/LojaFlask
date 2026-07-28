@@ -53,7 +53,7 @@ Tabelas modeladas:
 
 Esse "snapshot" de dados do cliente em `orders` é intencional: se o cliente depois mudar nome/telefone/e-mail no cadastro, o histórico do pedido continua mostrando os dados de quando a compra foi feita.
 
-````markdown
+
 ## Instalação local
 
 ```bash
@@ -86,8 +86,6 @@ flask --app run.py init-db
 flask --app run.py run
 ````
 
-```
-```
 
 
 Se usar MariaDB, crie antes o banco:
