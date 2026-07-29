@@ -171,9 +171,9 @@
         <tr>
           <td style="white-space:nowrap;color:#64748b;font-size:.875rem">{{ payment.created_at.strftime("%d/%m/%Y") }}</td>
           <td>
-            {% if payment.action == "renew" and payment.months %}
+            {% if payment.action == "renew" %}
             <span class="badge-lf badge-success"><i class="bi bi-arrow-repeat"></i>&nbsp; Renovação ({{ payment.months }} mês{{ "es" if payment.months != 1 }})</span>
-            {% elif payment.action == "renew" %}
+            {% elif payment.action == "adjustment" %}
             <span class="badge-lf badge-info"><i class="bi bi-pencil-square"></i>&nbsp; Data ajustada</span>
             {% else %}
             <span class="badge-lf badge-danger"><i class="bi bi-x-circle"></i>&nbsp; Suspensão</span>

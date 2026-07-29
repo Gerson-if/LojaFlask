@@ -293,13 +293,21 @@ class OrderItem(TimestampMixin, db.Model):
 
 
 class SubscriptionPayment(TimestampMixin, db.Model):
-    """Histórico de renovações/ações de assinatura de uma loja.
+    """Histórico de assinatura de uma loja: renovações pagas, suspensões e
+    ajustes manuais de data.
 
-    Cada renovação ou suspensão feita pelo superadmin em
-    `dashboard.admin_subscription_manage` gera um registro aqui, preservando
-    o histórico mesmo que `Store.paid_until` seja sobrescrito depois.
-    Isso alimenta tanto a tela "Minha assinatura" do lojista (histórico de
-    pagamentos) quanto relatórios financeiros do superadmin.
+    Cada ação feita pelo superadmin em `dashboard.admin_subscription_manage`
+    gera um registro aqui, preservando o histórico mesmo que
+    `Store.paid_until` seja sobrescrito depois. Isso alimenta tanto a tela
+    "Minha assinatura" do lojista quanto a área de gerenciamento do
+    superadmin.
+
+    `action` distingue três tipos de evento:
+      - "renew": renovação paga de fato (soma em MRR/receita).
+      - "adjustment": correção manual da data de vencimento, sem cobrança
+        associada (ex.: corrigir um lançamento errado, ou um acordo de
+        prazo). Não conta como receita.
+      - "suspend": suspensão imediata da assinatura.
     """
 
     __tablename__ = "subscription_payments"
@@ -307,9 +315,9 @@ class SubscriptionPayment(TimestampMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     store_id = db.Column(db.Integer, db.ForeignKey("stores.id"), nullable=False, index=True)
     action = db.Column(
-        db.Enum("renew", "suspend"), nullable=False, default="renew"
+        db.Enum("renew", "adjustment", "suspend"), nullable=False, default="renew"
     )
-    months = db.Column(db.Integer, nullable=True)  # nulo quando action="suspend"
+    months = db.Column(db.Integer, nullable=True)  # nulo quando action != "renew"
     amount = db.Column(db.Numeric(12, 2), nullable=True)  # valor cobrado nesta renovação
     period_start = db.Column(db.DateTime, nullable=True)
     period_end = db.Column(db.DateTime, nullable=True)

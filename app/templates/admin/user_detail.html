@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+{% block page_name %}{{ user.name }}{% endblock %}
+{% block content %}
+
+<div class="page-heading">
+  <div>
+    <div class="page-title">{{ user.name }}</div>
+    <div class="page-subtitle">
+      {{ user.email }}
+      {% if store %} · {{ store.name }} · <a href="{{ url_for('storefront.store', slug=store.slug) }}" target="_blank" rel="noopener">/{{ store.slug }} <i class="bi bi-box-arrow-up-right" style="font-size:.7rem"></i></a>{% endif %}
+    </div>
+  </div>
+  <a href="{{ url_for('dashboard.admin_users') }}" class="btn-outline-lf"><i class="bi bi-arrow-left"></i> Voltar para lojistas</a>
+</div>
+
+<div style="display:flex;justify-content:flex-end;gap:.5rem;margin-bottom:1rem">
+  {% if prev_user_id %}
+  <a href="{{ url_for('dashboard.admin_user_detail', user_id=prev_user_id) }}" class="btn-outline-lf" style="font-size:.8rem;padding:.4rem .75rem">
+    <i class="bi bi-chevron-left"></i> Anterior
+  </a>
+  {% endif %}
+  {% if next_user_id %}
+  <a href="{{ url_for('dashboard.admin_user_detail', user_id=next_user_id) }}" class="btn-outline-lf" style="font-size:.8rem;padding:.4rem .75rem">
+    Próximo <i class="bi bi-chevron-right"></i>
+  </a>
+  {% endif %}
+</div>
+
+{% set badge_map = {
+  "trial": ("badge-warning", "bi-clock-history", "Período de teste"),
+  "paid": ("badge-success", "bi-patch-check-fill", "Assinatura ativa"),
+  "expired": ("badge-danger", "bi-exclamation-triangle-fill", "Acesso expirado"),
+  "none": ("badge-danger", "bi-x-circle-fill", "Sem assinatura"),
+} %}
+
+<!-- ── VISÃO GERAL ─────────────────────────────────────────────────────── -->
+<div class="grid grid-4">
+  <div class="stat-card">
+    <div class="stat-label">Conta</div>
+    <div class="stat-value" style="font-size:1.2rem">
+      <span class="badge-lf {{ 'badge-success' if user.active else 'badge-danger' }}">{{ "Ativa" if user.active else "Suspensa" }}</span>
+    </div>
+  </div>
+  {% if status %}
+  {% set badge_class, badge_icon, status_label = badge_map.get(status.mode, badge_map["none"]) %}
+  <div class="stat-card">
+    <div class="stat-label">Assinatura</div>
+    <div class="stat-value" style="font-size:1.2rem"><span class="badge-lf {{ badge_class }}"><i class="bi {{ badge_icon }}"></i> {{ status_label }}</span></div>
+  </div>
+  {% endif %}
+  <div class="stat-card">
+    <div class="stat-label">Total pago</div>
+    <div class="stat-value" style="font-size:1.4rem">R$ {{ "%.2f"|format(total_paid) }}</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Cadastrado em</div>
+    <div class="stat-value" style="font-size:1.4rem">{{ user.created_at.strftime("%d/%m/%Y") }}</div>
+  </div>
+</div>
+
+{% if not store %}
+<div class="spacer-md"></div>
+<div class="empty-state">Este lojista ainda não configurou uma loja.</div>
+{% else %}
+
+<div class="spacer-md"></div>
+
+<div class="grid grid-2 dashboard-grid">
+
+  <!-- ── CONTA & SEGURANÇA ───────────────────────────────────────────── -->
+  <section class="card-lf stack-md">
+    <h3 style="margin:0;font-size:1rem;font-weight:800"><i class="bi bi-person-gear"></i> Conta &amp; segurança</h3>
+
+    <div style="display:grid;gap:.6rem">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:.85rem;color:#64748b">Status da conta</span>
+        <form method="post" action="{{ url_for('dashboard.admin_user_toggle', user_id=user.id) }}">
+          <button class="btn-sm-lf {{ 'btn-warning-lf' if user.active else 'btn-success-lf' }}">
+            <i class="bi {{ 'bi-pause-circle' if user.active else 'bi-play-circle' }}"></i>
+            {{ "Suspender conta" if user.active else "Reativar conta" }}
+          </button>
+        </form>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:.85rem;color:#64748b">Último login</span>
+        <strong style="font-size:.85rem">{% if user.last_login_at %}{{ user.last_login_at.strftime("%d/%m/%Y às %H:%M") }}{% else %}Nunca acessou{% endif %}</strong>
+      </div>
+      {% if user.is_locked() %}
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:.75rem .9rem;display:flex;align-items:center;justify-content:space-between;gap:.75rem;flex-wrap:wrap">
+        <span style="font-size:.82rem;color:#991b1b"><i class="bi bi-lock-fill"></i> Bloqueado por tentativas de login</span>
+        <form method="post" action="{{ url_for('dashboard.admin_unlock_user', user_id=user.id) }}">
+          <button class="btn-outline-lf" style="font-size:.76rem;padding:.3rem .6rem">Desbloquear</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+
+    <div style="border-top:1px solid #f1f5f9;padding-top:.85rem">
+      <form method="post" action="{{ url_for('dashboard.admin_user_password', user_id=user.id) }}" class="stack-sm">
+        <label class="form-label-lf">Definir nova senha</label>
+        <div style="display:flex;gap:.5rem">
+          <input class="input-lf" name="password" type="password" minlength="8" placeholder="Mínimo 8 caracteres, letras e números" style="flex:1">
+          <button class="btn-outline-lf" style="white-space:nowrap"><i class="bi bi-key"></i> Definir</button>
+        </div>
+        <small style="color:#94a3b8;font-size:.76rem">O lojista poderá trocar a senha depois em "Segurança", no próprio painel.</small>
+      </form>
+    </div>
+  </section>
+
+  <!-- ── LOJA ────────────────────────────────────────────────────────── -->
+  <section class="card-lf stack-md">
+    <h3 style="margin:0;font-size:1rem;font-weight:800"><i class="bi bi-shop"></i> Loja</h3>
+    <div class="grid grid-3" style="gap:.75rem">
+      <div class="stat-card" style="padding:.85rem">
+        <div class="stat-label" style="font-size:.72rem">Produtos</div>
+        <div class="stat-value" style="font-size:1.3rem">{{ store_stats.products }}</div>
+      </div>
+      <div class="stat-card" style="padding:.85rem">
+        <div class="stat-label" style="font-size:.72rem">Pedidos</div>
+        <div class="stat-value" style="font-size:1.3rem">{{ store_stats.orders }}</div>
+      </div>
+      <div class="stat-card" style="padding:.85rem">
+        <div class="stat-label" style="font-size:.72rem">Clientes</div>
+        <div class="stat-value" style="font-size:1.3rem">{{ store_stats.customers }}</div>
+      </div>
+    </div>
+    <a href="{{ url_for('storefront.store', slug=store.slug) }}" target="_blank" rel="noopener" class="btn-outline-lf full-btn" style="justify-content:center;display:flex">
+      <i class="bi bi-box-arrow-up-right"></i>&nbsp; Ver loja pública
+    </a>
+  </section>
+
+</div>
+
+<div class="spacer-md"></div>
+
+<!-- ── ASSINATURA ──────────────────────────────────────────────────────── -->
+<section class="card-lf stack-md">
+  <h3 style="margin:0;font-size:1rem;font-weight:800"><i class="bi bi-calendar-check"></i> Assinatura</h3>
+
+  <div style="display:grid;gap:.55rem">
+    {% if status.trial_ends_at %}
+    <div style="display:flex;justify-content:space-between"><span style="font-size:.85rem;color:#64748b">Fim do período de teste</span><strong style="font-size:.85rem">{{ status.trial_ends_at.strftime("%d/%m/%Y") }}</strong></div>
+    {% endif %}
+    {% if status.paid_until %}
+    <div style="display:flex;justify-content:space-between"><span style="font-size:.85rem;color:#64748b">Vencimento da assinatura paga</span><strong style="font-size:.85rem">{{ status.paid_until.strftime("%d/%m/%Y") }}</strong></div>
+    {% endif %}
+    {% if status.days_left is not none %}
+    <div style="display:flex;justify-content:space-between"><span style="font-size:.85rem;color:#64748b">Dias restantes</span><strong style="font-size:.85rem">{{ status.days_left }} dia{{ 's' if status.days_left != 1 }}</strong></div>
+    {% endif %}
+  </div>
+
+  <div class="grid grid-2" style="gap:1.25rem;margin-top:.5rem">
+
+    <div class="stack-md" style="border:1px solid #f1f5f9;border-radius:10px;padding:1rem">
+      <strong style="font-size:.85rem"><i class="bi bi-arrow-repeat"></i> Registrar renovação paga</strong>
+      <form method="post" action="{{ url_for('dashboard.admin_subscription_manage', user_id=user.id) }}" class="stack-sm">
+        <select class="input-lf" name="action" required>
+          <option value="renew_1">+1 mês</option>
+          <option value="renew_3">+3 meses</option>
+          <option value="renew_12">+12 meses</option>
+        </select>
+        <input class="input-lf" name="amount" placeholder="Valor cobrado (padrão: R$ {{ price }} × meses)" inputmode="decimal">
+        <input class="input-lf" name="note" placeholder="Observação (ex.: PIX, referência #1234)">
+        <button type="submit" class="btn-primary-lf full-btn" style="justify-content:center;display:flex">
+          <i class="bi bi-check2-circle"></i>&nbsp; Confirmar renovação
+        </button>
+      </form>
+    </div>
+
+    <div class="stack-md" style="border:1px solid #f1f5f9;border-radius:10px;padding:1rem">
+      <strong style="font-size:.85rem"><i class="bi bi-pencil-square"></i> Ajustar data de vencimento</strong>
+      <form method="post" action="{{ url_for('dashboard.admin_subscription_manage', user_id=user.id) }}" class="stack-sm">
+        <input type="hidden" name="action" value="set_date">
+        <input class="input-lf" type="date" name="paid_until" value="{{ status.paid_until.strftime('%Y-%m-%d') if status.paid_until else '' }}" required>
+        <input class="input-lf" name="note" placeholder="Motivo do ajuste (opcional)">
+        <small style="color:#94a3b8;font-size:.76rem">
+          Use para corrigir uma data errada — não conta como renovação paga e fica registrado como ajuste, não como pagamento.
+        </small>
+        <button type="submit" class="btn-outline-lf full-btn" style="justify-content:center;display:flex">
+          <i class="bi bi-calendar2-week"></i>&nbsp; Ajustar data
+        </button>
+      </form>
+    </div>
+
+  </div>
+
+  <form method="post" action="{{ url_for('dashboard.admin_subscription_manage', user_id=user.id) }}"
+        onsubmit="return confirm('Suspender a assinatura de {{ user.name }} agora?')">
+    <input type="hidden" name="action" value="suspend">
+    <button type="submit" class="btn-danger-lf" style="font-size:.82rem">
+      <i class="bi bi-x-circle"></i>&nbsp; Suspender assinatura agora
+    </button>
+  </form>
+</section>
+
+<div class="spacer-md"></div>
+
+<!-- ── HISTÓRICO ───────────────────────────────────────────────────────── -->
+<section class="card-lf table-card">
+  <div class="section-heading-row">
+    <h3 style="margin:0;font-size:1rem;font-weight:800">Histórico</h3>
+  </div>
+  {% if payments %}
+  <div class="table-scroll">
+    <table class="table-lf">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Tipo</th>
+          <th>Período</th>
+          <th>Valor</th>
+          <th>Registrado por</th>
+          <th>Observação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for payment in payments %}
+        <tr>
+          <td style="white-space:nowrap;color:#64748b;font-size:.875rem">{{ payment.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+          <td>
+            {% if payment.action == "renew" %}
+            <span class="badge-lf badge-success"><i class="bi bi-arrow-repeat"></i>&nbsp; Renovação ({{ payment.months }} mês{{ "es" if payment.months != 1 }})</span>
+            {% elif payment.action == "adjustment" %}
+            <span class="badge-lf badge-info"><i class="bi bi-pencil-square"></i>&nbsp; Ajuste de data</span>
+            {% else %}
+            <span class="badge-lf badge-danger"><i class="bi bi-x-circle"></i>&nbsp; Suspensão</span>
+            {% endif %}
+          </td>
+          <td style="white-space:nowrap;font-size:.875rem;color:#64748b">
+            {% if payment.period_start and payment.period_end %}
+              {{ payment.period_start.strftime("%d/%m/%Y") }} – {{ payment.period_end.strftime("%d/%m/%Y") }}
+            {% else %}-{% endif %}
+          </td>
+          <td style="white-space:nowrap;font-weight:700">
+            {% if payment.amount %}R$ {{ "%.2f"|format(payment.amount) }}{% else %}-{% endif %}
+          </td>
+          <td style="font-size:.85rem;color:#64748b">{{ payment.registered_by.name if payment.registered_by else "-" }}</td>
+          <td style="color:#64748b;font-size:.85rem">{{ payment.note or "-" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <i class="bi bi-receipt" style="font-size:2rem;display:block;margin-bottom:.5rem;color:#cbd5e1"></i>
+    Nenhum evento de assinatura registrado ainda para esta loja.
+  </div>
+  {% endif %}
+</section>
+
+{% endif %}
+
+<div class="spacer-md"></div>
+
+<!-- ── ZONA DE PERIGO ──────────────────────────────────────────────────── -->
+<section class="card-lf stack-md" style="border-color:#fecaca">
+  <h3 style="margin:0;font-size:1rem;font-weight:800;color:#991b1b"><i class="bi bi-exclamation-triangle"></i> Zona de perigo</h3>
+  <p style="margin:0;font-size:.85rem;color:#64748b">
+    Excluir este lojista remove a conta, a loja, todos os produtos, pedidos e arquivos enviados. Esta ação não pode ser desfeita.
+  </p>
+  <form method="post" action="{{ url_for('dashboard.admin_user_delete', user_id=user.id) }}"
+        onsubmit="return confirm('Excluir definitivamente {{ user.name }}, a loja e todos os dados associados?')">
+    <button type="submit" class="btn-danger-lf"><i class="bi bi-trash"></i> Excluir lojista permanentemente</button>
+  </form>
+</section>
+
+{% endblock %}

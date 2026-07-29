@@ -1002,7 +1002,7 @@ def admin_user_toggle(user_id):
     user.active = not user.active
     db.session.commit()
     flash("Status do lojista atualizado.", "success")
-    return redirect(url_for("dashboard.admin_users"))
+    return redirect(url_for("dashboard.admin_user_detail", user_id=user.id))
 
 
 @dashboard_bp.route("/admin/lojistas/<int:user_id>/desbloquear", methods=["POST"])
@@ -1014,7 +1014,7 @@ def admin_unlock_user(user_id):
     user.locked_until = None
     db.session.commit()
     flash(f"Conta de {user.name} desbloqueada.", "success")
-    return redirect(request.referrer or url_for("dashboard.admin_users"))
+    return redirect(url_for("dashboard.admin_user_detail", user_id=user.id))
 
 
 @dashboard_bp.route("/admin/lojistas/<int:user_id>/senha", methods=["POST"])
@@ -1038,7 +1038,7 @@ def admin_user_password(user_id):
         user.locked_until = None
         db.session.commit()
         flash("Senha atualizada.", "success")
-    return redirect(url_for("dashboard.admin_users"))
+    return redirect(url_for("dashboard.admin_user_detail", user_id=user.id))
 
 
 @dashboard_bp.route("/admin/lojistas/<int:user_id>/excluir", methods=["POST"])
@@ -1056,7 +1056,7 @@ def admin_user_delete(user_id):
     except IntegrityError:
         db.session.rollback()
         flash("Não foi possível excluir o lojista agora.", "danger")
-        return redirect(url_for("dashboard.admin_users"))
+        return redirect(url_for("dashboard.admin_user_detail", user_id=user.id))
     if upload_prefix:
         delete_upload_folder(upload_prefix)
     flash("Lojista excluído.", "success")
@@ -1141,12 +1141,12 @@ def admin_subscription_manage(user_id):
         date_raw = request.form.get("paid_until", "").strip()
         if not date_raw:
             flash("Informe uma data de vencimento válida.", "danger")
-            return redirect(request.referrer or url_for("dashboard.admin_users"))
+            return redirect(url_for("dashboard.admin_user_detail", user_id=user.id))
         try:
             new_date = datetime.strptime(date_raw, "%Y-%m-%d")
         except ValueError:
             flash("Data inválida. Use o seletor de data do formulário.", "danger")
-            return redirect(request.referrer or url_for("dashboard.admin_users"))
+            return redirect(url_for("dashboard.admin_user_detail", user_id=user.id))
 
         old_paid_until = store.paid_until
         # Fim do dia escolhido, para a loja continuar ativa até o fim daquela data
@@ -1162,7 +1162,7 @@ def admin_subscription_manage(user_id):
         db.session.add(
             SubscriptionPayment(
                 store_id=store.id,
-                action="renew",
+                action="adjustment",
                 months=None,
                 amount=None,
                 period_start=now_naive,
@@ -1193,36 +1193,64 @@ def admin_subscription_manage(user_id):
     else:
         flash("Ação inválida.", "danger")
 
-    return redirect(request.referrer or url_for("dashboard.admin_users"))
+    return redirect(url_for("dashboard.admin_user_detail", user_id=user.id))
 
 
-@dashboard_bp.route("/admin/lojistas/<int:user_id>/assinatura/historico")
+@dashboard_bp.route("/admin/lojistas/<int:user_id>")
 @login_required
 @superadmin_required
-def admin_subscription_detail(user_id):
-    """Histórico completo de assinatura de um lojista — usado pelo superadmin
-    para auditar renovações/suspensões e ver o status atual em detalhe."""
+def admin_user_detail(user_id):
+    """Página central de gerenciamento de um lojista: visão geral da conta
+    e da loja, segurança (senha/bloqueio), assinatura (status, renovação,
+    ajuste de data, histórico) e exclusão — tudo em um único lugar, em vez
+    de espalhado em botões na listagem."""
     from ..subscription import store_access_status, PLAN_PRICE_MONTHLY
 
     user = User.query.filter_by(id=user_id, role="lojista").first_or_404()
     store = user.store
-    if not store:
-        flash("Este lojista não possui loja cadastrada.", "warning")
-        return redirect(url_for("dashboard.admin_users"))
 
-    payments = (
-        SubscriptionPayment.query.filter_by(store_id=store.id)
-        .order_by(SubscriptionPayment.created_at.desc())
-        .all()
-    )
-    total_paid = sum((p.amount or Decimal("0.00")) for p in payments if p.action == "renew")
+    status = store_access_status(store) if store else None
+    payments = []
+    total_paid = Decimal("0.00")
+    if store:
+        payments = (
+            SubscriptionPayment.query.filter_by(store_id=store.id)
+            .order_by(SubscriptionPayment.created_at.desc())
+            .all()
+        )
+        total_paid = sum((p.amount or Decimal("0.00")) for p in payments if p.action == "renew")
+
+    store_stats = None
+    if store:
+        store_stats = {
+            "products": Product.query.filter_by(store_id=store.id).count(),
+            "orders": Order.query.filter_by(store_id=store.id).count(),
+            "customers": Customer.query.filter_by(store_id=store.id).count(),
+        }
+
+    # Navegação rápida entre lojistas (ordem alfabética por nome), para o
+    # superadmin revisar vários cadastros em sequência sem voltar à listagem
+    # a cada lojista.
+    all_lojista_ids = [
+        u.id for u in User.query.filter_by(role="lojista").order_by(User.name).all()
+    ]
+    prev_user_id = next_user_id = None
+    if user.id in all_lojista_ids:
+        idx = all_lojista_ids.index(user.id)
+        if idx > 0:
+            prev_user_id = all_lojista_ids[idx - 1]
+        if idx < len(all_lojista_ids) - 1:
+            next_user_id = all_lojista_ids[idx + 1]
 
     return render_template(
-        "admin/subscription_detail.html",
+        "admin/user_detail.html",
         user=user,
         store=store,
-        status=store_access_status(store),
+        status=status,
         payments=payments,
         total_paid=total_paid,
         price=PLAN_PRICE_MONTHLY,
+        store_stats=store_stats,
+        prev_user_id=prev_user_id,
+        next_user_id=next_user_id,
     )

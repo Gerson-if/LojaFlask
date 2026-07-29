@@ -1,5 +1,55 @@
 # Changelog desta correção
 
+## 🆕 Gestão de lojistas reestruturada em hub central + correção no histórico de assinatura
+
+### Problema antes desta mudança
+A tela de listagem de lojistas (superadmin) acumulava muitos botões por
+linha — suspender conta, abrir um dropdown de assinatura, campo de senha
+inline, excluir — tudo espremido na tabela. E ajustar manualmente a data de
+vencimento de uma assinatura criava um novo registro no histórico marcado
+como "renovação", misturando correções administrativas com pagamentos
+reais (distorcendo o total já pago e a receita calculada).
+
+### 🆕 Nova página: gerenciamento completo por lojista
+A listagem (`/painel/admin/lojistas`) agora só lista e filtra — cada linha
+tem um único botão "Gerenciar", que leva para uma página central nova
+(`/painel/admin/lojistas/<id>`) organizada em seções claras:
+
+- **Visão geral**: status da conta, status da assinatura, total pago, data de cadastro.
+- **Conta & segurança**: suspender/reativar conta, ver último login,
+  desbloquear conta (se travada por tentativas de login), definir nova senha.
+- **Loja**: contadores de produtos/pedidos/clientes e link direto para a loja pública.
+- **Assinatura**: registrar renovação paga (com valor e observação) e
+  ajustar a data de vencimento manualmente, lado a lado — para deixar claro
+  que são duas ações com propósitos diferentes — além de suspender a
+  assinatura.
+- **Histórico**: todas as renovações, ajustes e suspensões daquele lojista,
+  com quem registrou cada uma.
+- **Zona de perigo**: exclusão do lojista, isolada visualmente do resto.
+
+Também foi adicionada uma navegação "Anterior / Próximo" no topo da página,
+para o superadmin revisar vários lojistas em sequência (em ordem alfabética)
+sem precisar voltar à listagem a cada um.
+
+### 🔴 Bug corrigido: ajuste de data contava como renovação no histórico
+Adicionado um terceiro tipo de evento (`action="adjustment"`) ao histórico
+de assinatura, distinto de `"renew"` (renovação paga) e `"suspend"`. Agora,
+ao corrigir manualmente a data de vencimento de uma loja, o evento fica
+registrado como **ajuste**, não como renovação — não soma em "total pago"
+nem em receita/MRR, e aparece no histórico com um rótulo diferente ("Ajuste
+de data" em vez de "Renovação"). Antes, esse tipo de correção criava um
+registro de renovação com `months`/`amount` vazios, o que distorcia os
+totais e ainda chegou a exibir "None mês" na tela em alguns casos.
+
+### 🗄️ Banco de dados desta rodada
+Nova migration `a7b8c9d0e1f2`: adiciona `"adjustment"` ao enum `action` de
+`subscription_payments`. Registros antigos de ajuste (gravados como
+`"renew"` com `months` nulo, antes desta correção) continuam como estavam;
+quem quiser reclassificá-los pode rodar manualmente o UPDATE documentado
+no arquivo da migration.
+
+---
+
 ## 🆕 Landing page, segurança de contas e melhorias de gestão
 
 ### 🔴 Bug corrigido: botão "Criar conta" deformado no celular
